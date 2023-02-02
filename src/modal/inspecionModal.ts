@@ -41,7 +41,8 @@ const surveySchema = new Schema({
     },
     IsOnGoingSurvey:{
         type :String, 
-        enum: ["pending", "OnGoing", "completed"]
+        enum: ["pending", "OnGoing", "completed"],
+        default:"pending"
     },
     IsActive:{
         type:Boolean,

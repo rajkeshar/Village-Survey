@@ -5,6 +5,7 @@ import indexRout from './route/indexroute'
 import userRoute from './route/userRoute';
 import deptRoute from './route/departmentRoute';
 import rankRoute from './route/rankRoute';
+import zoneRoute from './route/zoneRoute';
 import connectDB from './config/db';
 const app = express();
 dotenv.config()
@@ -26,6 +27,7 @@ app.use('/api',indexRout);
 app.use('/api/user',userRoute)
 app.use('/api/dept',deptRoute)
 app.use('/api/rank',rankRoute)
+app.use('/api/zone',zoneRoute)
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = require('twilio')('AC4930aa28ae1eda4956dcf43b2c781b03', '8f14ed8950c39eadb705bc0ed92f1943');

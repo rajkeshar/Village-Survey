@@ -1,20 +1,5 @@
 import mongoose, { Schema } from 'mongoose'
 
-const scheme = new Schema({
-    schemeName: {
-        type:String
-    },
-    Ranking : {
-        type : Number
-    }
-});
-const departmentSchema = new Schema({
-    departmentName: {
-        type:String
-    },
-    departmentScheme : [scheme]
-
-});
 const villageSchema = new Schema({
     villageName:{
         type :String,
@@ -23,7 +8,6 @@ const villageSchema = new Schema({
         type :String,
         required : true
     },
-    RankINDepartmentScheme:[departmentSchema]
 })
 const blockSchema = new Schema({
     blockName:{
@@ -48,5 +32,5 @@ const locationSchema = new Schema({
 { timestamps: true }
 )
 
-var villageModal = mongoose.model('village', locationSchema)
-export default villageModal;
+var zoneModal = mongoose.model('village', locationSchema)
+export default zoneModal;
