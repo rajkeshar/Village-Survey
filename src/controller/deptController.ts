@@ -9,11 +9,11 @@ export async function addNewDepartment(req: Request, res: Response) {
 
         
         let setQuery = { 
-            deptName:deptName,
-            "schemeDetails" :[{
-                schemeId : schemeId , 
-                schemeName : schemeName
-            }] 
+            deptName:deptName
+            // "schemeDetails" :[{
+            //     schemeId : schemeId , 
+            //     schemeName : schemeName
+            // }] 
         } as any 
         if(!deptId){
         let isAlreadyExist = await deptModal.findOne({ deptName }).lean() as any;
