@@ -8,7 +8,7 @@ const deptSchema = new Schema({
     schemeDetails: [
         {
             schemeId: {
-                type: Number
+                type: String
             },
             schemeName: {
                 type: String

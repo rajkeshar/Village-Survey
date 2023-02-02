@@ -71,7 +71,7 @@ export async function deleteDepartment(req: Request, res: Response) {
         const dept = await deptModal.findByIdAndDelete(id);
 
         if (!dept) res.status(404).send({ message: "No item found" });
-        res.status(200).send({ message: 'Successfully deleted', success: true });
+        return res.status(200).send({ message: 'Successfully deleted', success: true });
     } catch (error) {
         res.status(500).send(error);
     }
@@ -101,6 +101,18 @@ export async function getSchemeByDepartment(req: Request, res: Response) {
         if(!dept) return res.status(400).send({message : 'Dept id not found, Invalid Id'}); 
         let schemeDetail = dept.schemeDetails
         res.send({ message: "scheme list fetched successfully", data: schemeDetail });
+    } catch (error) {
+        res.status(500).send(error);
+    }
+}
+export async function deleteScheme(req: Request, res: Response) {
+    let { id,schemename } = req.params;
+    try {
+        const dept = await deptModal.findOne({ _id : new mongoose.Types.ObjectId(id), 'IsActive' : true}) as any
+        if(!dept) return res.status(400).send({message : 'Dept id not found, Invalid Id'}); 
+        let result = await deptModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id)},
+        { $pull: { 'schemeDetails':{ 'schemeName': schemename }}}) 
+        res.send({ message: "scheme list fetched successfully", data: result });
     } catch (error) {
         res.status(500).send(error);
     }
