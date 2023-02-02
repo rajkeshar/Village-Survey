@@ -10,15 +10,15 @@ export async function addNewZone(req: Request, res: Response) {
         let newZone = new zoneModal({
             blockUniqueId, villageName, villageUniqueId,
             districtName: districtName,
-            pincode: pincode,
-            'blocks': [{
-                blockName: blockName,
-                blockUniqueId: blockUniqueId,
-                'villages': [{
-                    villageName: villageName,
-                    villageUniqueId: villageUniqueId
-                }]
-            }],
+            pincode: pincode
+            // 'blocks': [{
+            //     blockName: blockName,
+            //     blockUniqueId: blockUniqueId,
+            //     'villages': [{
+            //         villageName: villageName,
+            //         villageUniqueId: villageUniqueId
+            //     }]
+            // }],
         })
         if (!zoneId) {
              if (!districtName || !pincode ) return res.status(400).send({ message: "Please send districtName & pincode fields" })
@@ -28,11 +28,11 @@ export async function addNewZone(req: Request, res: Response) {
              if (!blockName || !blockUniqueId ) return res.status(400).send({ message: "Please send blockName & blockUniqueId fields" })
             let payload = {
                 blockName: blockName,
-                blockUniqueId: blockUniqueId,
-                'villages': [{
-                    villageName: villageName,
-                    villageUniqueId: villageUniqueId
-                }]
+                blockUniqueId: blockUniqueId
+                // 'villages': [{
+                //     villageName: villageName,
+                //     villageUniqueId: villageUniqueId
+                // }]
             }
             const setQuery = { $addToSet: { "blocks": { $each: [payload] } } };
             const updateZone = await zoneModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(zoneId) }, setQuery, { new: true });
