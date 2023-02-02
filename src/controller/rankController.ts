@@ -12,13 +12,7 @@ export async function addNewRank(req: Request, res: Response) {
             await rank.save();
             return res.status(201).send({ message: "Succesfully added  scheme",data: rank, success: true });
         }
-        if(rankType === '1to10'){
-            let rank1to10 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-            let rank = new rankModal({rankType : rank1to10});
-            await rank.save();
-            return res.status(201).send({ message: "Succesfully added  scheme",data: rank, success: true });
-        }
-        if(rankType === '1to20'){
+        if(rankType === '2o20'){
             let rank1to10 = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20];
             let rank = new rankModal({rankType : rank1to10});
             await rank.save();
@@ -50,7 +44,14 @@ export async function addNewRank(req: Request, res: Response) {
             await rank.save();
             return res.status(201).send({ message: "Succesfully added  scheme",data: rank, success: true });
         }
-       
+    } catch (error) {
+        res.status(500).send(error);
+    }
+}
+export async function getAllRank(req: Request, res: Response) {
+    try {
+        let ranks = await rankModal.find();
+        return res.status(201).send({ message: 'fetched all', data: ranks, success: true });
     } catch (error) {
         res.status(500).send(error);
     }
