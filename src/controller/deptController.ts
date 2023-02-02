@@ -7,8 +7,7 @@ export async function addNewDepartment(req: Request, res: Response) {
         let { deptName, schemeName, schemeId, deptId } = req.body
         if (!deptName) return res.status(400).send("Kindly send dept Name");
 
-        let isAlreadyExist = await deptModal.findOne({ deptName }).lean() as any;
-        if (isAlreadyExist) return res.status(400).send("This dept already exist");
+        
         let setQuery = { 
             deptName:deptName,
             "schemeDetails" :[{
@@ -17,6 +16,8 @@ export async function addNewDepartment(req: Request, res: Response) {
             }] 
         } as any 
         if(!deptId){
+        let isAlreadyExist = await deptModal.findOne({ deptName }).lean() as any;
+        if (isAlreadyExist) return res.status(400).send("This dept already exist");
             let newDept = new deptModal(setQuery)
             await newDept.save();
             return res.status(201).send({ message: "Succesfully created", data: newDept, success: true });

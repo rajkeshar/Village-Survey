@@ -95,11 +95,14 @@ export async function deleteZone(req: Request, res: Response) {
 }
 export async function deleteBlockOrVillage(req: Request, res: Response) {
     try {
-        let { id , blockName, villageName} =  req.params;
+        let { id , blockName, villageName, blockUniqueId} =  req.params;
         let zone = await zoneModal.find({_id : new mongoose.Types.ObjectId(id)})
         if(!zone) return res.status(400).send({mesage : "This Id is not exist, Invalid ID"})
         await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id)},
         { $pull: { 'blocks':{ 'blockName': blockName }}})
+        await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id),
+            "blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId}}},
+            { $pull: { 'blocks.$.villages':{ 'villageName': villageName }}})
         return res.status(201).send({mesage : "Deleted successfully", success: true})
     } catch (error) {
         res.status(500).send(error);
