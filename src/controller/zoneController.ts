@@ -148,8 +148,10 @@ export async function getAllBlocks(req: Request, res: Response) {
         if(!blockList) return res.status(201).send({message : "District Id is not found, Invalid ID"})
         blockList.map( x => {
             let blockArray=[] as any; 
+            let distName = x.districtName;
             (x.blocks.map(y => {
                 blockArray.push({
+                    districtName : distName,
                     blockName : y.blockName,
                     blockUniqueId : y.blockUniqueId
                 })
@@ -167,7 +169,10 @@ export async function getAllVillage(req: Request, res: Response) {
         if (!dist) return res.status(201).send({ message: "District Id is not found, Invalid ID" })
         let villageArray = [] as any;
         dist.map(x => {
-            x.blocks.map(y => { if (y.blockUniqueId === blockId) { console.log(y.villages.map(z => {villageArray.push({
+            let distName = x.districtName;
+            x.blocks.map(y => { if (y.blockUniqueId === blockId) { let blockName = y.blockName;console.log(y.villages.map(z => {villageArray.push({
+                            distName: distName as any,
+                            blockName : blockName as any,
                             villageName: z.villageName as any,
                             villageUniqueId : z.villageUniqueId as any
                     })
