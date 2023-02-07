@@ -194,15 +194,8 @@ export async function getAllZone(req: Request, res: Response) {
 }
 export async function getCountOfAllVillage(req: Request, res: Response) {
     try {
-        // a
-        // sync function countDocuments() {
-        const count = await zoneModal.countDocuments({"_id" :{"$exists":true},
-            "blocks" :{$elemMatch:{"villages" :{$elemMatch:{"$exists":true}}}}});
-        console.log(count);
-    
-
-        let villageCount = await zoneModal.countDocuments({"_id" :{"$exists":true},
-        "blocks" :{$elemMatch:{"villages" :{$elemMatch:{"$exists":true}}}}})
+        let villageCount = await zoneModal.aggregate([{$match:{"blocks": { $elemMatch: {"villages" :{$elemMatch:{"$exists":true}}}}}},{ $count:"Total Number of Villages"
+            }])
         return res.status(201).send({message : "fetched successfully", success: true, result : villageCount})
     } catch (error) {
         res.status(500).json({error :JSON.stringify(error), success: false});
@@ -210,8 +203,7 @@ export async function getCountOfAllVillage(req: Request, res: Response) {
 }
 export async function getCountOfAllBlocks(req: Request, res: Response) {
     try {
-        let blockCount = await zoneModal.find({"_id" :{"$exists":true},
-        "blocks" :{$elemMatch:{"$exists":true}}}).count()
+        let blockCount = await zoneModal.aggregate([{$match:{"blocks": { $elemMatch: { "$exists": true }}}},{ $count:"Total NUmber"}])
         return res.status(201).send({mesage : "fetched successfully", success: true, result : blockCount})
     } catch (error) {
         res.status(500).json({error :JSON.stringify(error), success: false});
