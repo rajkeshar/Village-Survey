@@ -16,19 +16,23 @@ const surveySchema = new Schema({
         }
     }],
     villageName:{
-        type :Array
+        type :String,
+        required : true
     },
     departmentName:{
-        type :Array
+        type :String,
+        required : true
     },
     blockName:{
-        type :Array
+        type :String,
+        required : true
     },
     talukaName:{
-        type :Array
+        type :String
     },
     districtName:{
-        type :Array
+        type :String,
+        required : true
     },
     surveyStartDate:{
         type :Date
