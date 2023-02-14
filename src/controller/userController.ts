@@ -1,24 +1,16 @@
 import express, { NextFunction, Request, Response } from 'express'
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import  axios  from 'axios';
 import otpGenerator from "otp-generator";
-import userModal from '../modal/usermodal'
+import userModal from '../modal/userModal'
 import otpModal from '../modal/userOTPModal'
 import { generateAccessToken } from '../middleware/auth';
 import initMB from 'messagebird';
-import { sendOTP, sendSMS, verifyUser } from '../utils/sendOtp'
 import { sendEmail } from '../utils/email-auth'
-const MSGBIRD = process.env.MSGBIRD as any;
-const messagebird = initMB(process.env.MSGBIRD as any);
-console.log(MSGBIRD)
-const { Vonage } = require('@vonage/server-sdk')
 
-const vonage = new Vonage({
-    apiKey: "1f099d6e",
-    apiSecret: "3VUGb63Kxde57hFA"
-});
+
 import * as dotenv from 'dotenv'
-import fast2sms from 'fast-two-sms';
 import mongoose from 'mongoose';
 dotenv.config()
 const FAST2SMS = process.env.FAST2SMS;
@@ -66,7 +58,7 @@ export async function signUp(req: Request, res: Response, next: NextFunction) {
     })
 }
 export async function logIn(req: Request, res: Response, next: NextFunction) {
-    let { contactNumber } = req.body;
+    let { contactNumber , email } = req.body;
     if (!contactNumber) return res.status(400).json({ message: "Contact Number is required" })
 
     const existingUser = await userModal.find({ contactNumber: contactNumber });
@@ -78,31 +70,32 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
 
 
     const newPhoneNmber = '+91' + contactNumber;
-
-    const from = 'Village_Survey'
-    const to = newPhoneNmber
-    const text = 'Your Login OTP to your Mobile Number.'
-
-     let reqId = await sendSMS(to, from, text)
-     console.log(reqId);
-    return res.status(201).json({ message: "OTP send successfully" })
-}
-export async function verifyOTP(req: Request, res: Response) {
-    let { plainOTP, contactNumber , reqId} = req.body;
-
-     const otpHolder = await otpModal.find({ contactNumber: contactNumber })
-
-    if(otpHolder.length === 0) return res.status(400).json({message :"Your OTP is expired, Try Another"})
-    let REQUEST_ID = reqId;
-    vonage.verify.check(REQUEST_ID, plainOTP)
-        .then((resp) => {
-            console.log(resp)
-            const token = generateAccessToken(otpHolder);
-            return res.status(201).send({ message: "Successfully Logged In", data: { otpHolder, token } })
-        }).catch((err) => {
-            console.error(err);
-            return res.status(201).send({ message: "Your OTP is wrong, Try Again"})
-        });
+    // 
+    const baseURL = process.env.BASE_URL
+    const apiUrl = `https://webpostservice.com/sendsms_v2.0/sendsms.php`; // Replace with the API endpoint URL
+    const apiKey = 'TmVjdGVyZVQ6Y3A1RUVSOEo='; // Replace with your actual API key
+    const phone = newPhoneNmber; // Replace with the phone number of the recipient
+    const code = OTP; // Replace with your actual verification code
+    
+    axios.get(apiUrl, {
+        params: {
+            APIKey: process.env.apikey,
+            TYPE: process.env.TYPE,
+            MOBILE: contactNumber,
+            MESSAGE: `Hello User, Your Login OTP is ${OTP}.`, 
+            PEID :process.env.PEID,
+            sender: process.env.sender,
+            TEMPID: process.env.TEMPID,
+            username: process.env.username,
+            password: process.env.password
+        }})
+    .then(response => {
+      console.log(response.data);
+      return res.status(201).json({ message: "OTP send successfully" })
+    })
+    .catch(error => {
+      console.error(error);
+    });
 }
 export async function superAdminRegister(req: Request, res: Response) {
     let searchQuery = {
