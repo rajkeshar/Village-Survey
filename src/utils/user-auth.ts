@@ -17,7 +17,7 @@ let roles = 'superadmin'
     }
 }
 export const checkRoleForInspector = (req: any, res: Response, next: NextFunction) =>{
-let roles = 'superadmin'
+let roles = 'inspector'
     try {
         console.log(req,res)
     if (roles.includes(req.user.role))
@@ -32,7 +32,7 @@ let roles = 'superadmin'
     }
 }
 export const checkRoleForDistrictManager = (req: any, res: Response, next: NextFunction) =>{
-let roles = 'superadmin'
+let roles = 'districtmanager'
     try {
         console.log(req,res)
     if (roles.includes(req.user.role))
