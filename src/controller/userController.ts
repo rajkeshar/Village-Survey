@@ -69,29 +69,19 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
         });
 
 
-    const newPhoneNmber = '+91' + contactNumber;
+    const newPhoneNumber = `${contactNumber}`;
     // 
     const baseURL = process.env.BASE_URL
-    const apiUrl = `https://webpostservice.com/sendsms_v2.0/sendsms.php`; // Replace with the API endpoint URL
-    const apiKey = 'TmVjdGVyZVQ6Y3A1RUVSOEo='; // Replace with your actual API key
-    const phone = newPhoneNmber; // Replace with the phone number of the recipient
-    const code = OTP; // Replace with your actual verification code
+    const apiUrl = `${baseURL}/sendsms_v2.0/sendsms.php?apikey=${process.env.apikey}&type=${process.env.TYPE}&sender=${process.env.sender}&mobile=${newPhoneNumber}&message=text=Hello+User%2C+Your+Login+OTP+is+%24%7BOTP%7D&peId=${process.env.PEID}&tempId=${process.env.TEMPID}&username=${process.env.username}&password=${process.env.password}`; // Replace with the API endpoint URL
     
-    axios.get(apiUrl, {
-        params: {
-            APIKey: process.env.apikey,
-            TYPE: process.env.TYPE,
-            MOBILE: contactNumber,
-            MESSAGE: `Hello User, Your Login OTP is ${OTP}.`, 
-            PEID :process.env.PEID,
-            sender: process.env.sender,
-            TEMPID: process.env.TEMPID,
-            username: process.env.username,
-            password: process.env.password
-        }})
+    // const apiKey = 'TmVjdGVyZVQ6Y3A1RUVSOEo='; // Replace with your actual API key
+    // const phone = newPhoneNumber; // Replace with the phone number of the recipient
+    // const code = OTP; // Replace with your actual verification code
+    
+    axios.get(apiUrl)
     .then(response => {
       console.log(response.data);
-      return res.status(201).json({ message: "OTP send successfully" })
+      return res.status(201).json({ message: "OTP send successfully"})
     })
     .catch(error => {
       console.error(error);
