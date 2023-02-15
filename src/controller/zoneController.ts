@@ -194,7 +194,7 @@ export async function getAllZone(req: Request, res: Response) {
 }
 export async function getCountOfAllVillage(req: Request, res: Response) {
     try {
-        let villageCount = await zoneModal.aggregate([{$match:{"blocks": { $elemMatch: {"villages" :{$elemMatch:{"$exists":true}}}}}},{ $count:"Total Number of Villages"
+        let villageCount = await zoneModal.aggregate([{$match:{"blocks": { $elemMatch: {"villages" :{$elemMatch:{"$exists":true}}}}}},{ $count:"totalNumberOfVillages"
             }])
         return res.status(201).send({message : "fetched successfully", success: true, result : villageCount})
     } catch (error) {
@@ -203,7 +203,7 @@ export async function getCountOfAllVillage(req: Request, res: Response) {
 }
 export async function getCountOfAllBlocks(req: Request, res: Response) {
     try {
-        let blockCount = await zoneModal.aggregate([{$match:{"blocks": { $elemMatch: { "$exists": true }}}},{ $count:"Total NUmber"}])
+        let blockCount = await zoneModal.aggregate([{$match:{"blocks": { $elemMatch: { "$exists": true }}}},{ $count:"totalNumberOfBlock"}])
         return res.status(201).send({mesage : "fetched successfully", success: true, result : blockCount})
     } catch (error) {
         res.status(500).json({error :JSON.stringify(error), success: false});
