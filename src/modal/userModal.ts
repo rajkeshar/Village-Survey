@@ -50,6 +50,8 @@ const userSchema = new Schema({
     CurrentTalukaName:{
         type :String,
     },
+    otp: { type: String },
+  otpExpires: { type: Date },
     ReportingAuthorityName:{
         type :String,
         required : true

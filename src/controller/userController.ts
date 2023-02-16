@@ -61,27 +61,37 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
     let { contactNumber , email } = req.body;
     if (!contactNumber) return res.status(400).json({ message: "Contact Number is required" })
 
-    const existingUser = await userModal.find({ contactNumber: contactNumber });
+    const existingUser = await userModal.findOne({ contactNumber: contactNumber }) as any
     if (!existingUser) return res.status(400).json({ message: "This User is not exist!,Kindy SignUp with your phone number" })
-    const OTP = otpGenerator.generate(6,
-        {
-            digits: true, upperCaseAlphabets: false, specialChars: false
-        });
+    // const OTP = otpGenerator.generate(6,
+    //     {
+    //         digits: true, upperCaseAlphabets: false, specialChars: false
+    //     });
 
-
+        const generateOTP = (length = 6) => {
+            let otp = ''
+        
+            for (let i = 0; i < length; i++) {
+                otp += Math.floor(Math.random() * 10)
+            }
+        
+            return otp
+        }
+    const OTP = JSON.parse(generateOTP());
     const newPhoneNumber = `${contactNumber}`;
-    // 
-    const baseURL = process.env.BASE_URL
-    const apiUrl = `${baseURL}/sendsms_v2.0/sendsms.php?apikey=${process.env.apikey}&type=${process.env.TYPE}&sender=${process.env.sender}&mobile=${newPhoneNumber}&message=text=Hello+User%2C+Your+Login+OTP+is+%24%7BOTP%7D&peId=${process.env.PEID}&tempId=${process.env.TEMPID}&username=${process.env.username}&password=${process.env.password}`; // Replace with the API endpoint URL
-    
-    // const apiKey = 'TmVjdGVyZVQ6Y3A1RUVSOEo='; // Replace with your actual API key
-    // const phone = newPhoneNumber; // Replace with the phone number of the recipient
-    // const code = OTP; // Replace with your actual verification code
+    const sec = 120;
+    const message = `Dear user, OTP for resetting the Password for NECTERE SOLUTIONS is ${OTP}. The OTP is valid for ${sec} secs.
+    NECTERE SOLUTIONS`
+    const apiUrl = `https:webpostservice.com/sendsms_v2.0/sendsms.php?apikey=${process.env.apikey}&type=${process.env.TYPE}&sender=${process.env.sender}&mobile=${newPhoneNumber}&message=${message}&peId=${process.env.PEID}&tempId=${process.env.TEMPID}&username=${process.env.username}&password=${process.env.password}`; // Replace with the API endpoint URL
+    existingUser.otp = OTP;
+    existingUser.otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 
+    existingUser.save();
     
     axios.get(apiUrl)
     .then(response => {
       console.log(response.data);
-      return res.status(201).json({ message: "OTP send successfully"})
+      const token = generateAccessToken(existingUser);
+      return res.status(201).json({ message: "OTP send successfully", data : token})
     })
     .catch(error => {
       console.error(error);
@@ -140,30 +150,46 @@ export async function loginSuperAdmin(req: Request, res: Response) {
 };
 export async function verifyUserEmail(req: Request, role: string, res: Response) {
     try {
-        const { email, password } = req.body;
-        const user = await userModal.findOne({ email: email, "IsActive": true }) as any
+        const { contactNumber, password } = req.body;
+        const user = await userModal.findOne({ contactNumber: contactNumber, "IsActive": true }) as any
         var validPassword;
         if (user) {
             validPassword = await bcrypt.compare(password, user.password);
         }
         if (!user || !validPassword) {
-            return res.json({ message: "Email or password is invalid" })
+            return res.json({ message: "Contact Number or password is invalid" })
         }
         if (user.role != role) {
             return res.json({ message: "Please login from the right portal..." })
         }
-        const secret: any = process.env.JWTSECRET_KEY;
-        const payload = {
-            email: user.email,
-            userId: user._id
+        const generateOTP = (length = 6) => {
+            let otp = ''
+        
+            for (let i = 0; i < length; i++) {
+                otp += Math.floor(Math.random() * 10)
+            }
+        
+            return otp
         }
-        const token = jwt.sign(payload, secret, { expiresIn: '5m' });
-        const message = `Kindly Click on the link to login 
-
-        ${process.env.BASE_URL}/login-superadmin/verify/${user._id}/${token}`;
-        await sendEmail(email, "Verify Email", message);
-
-        return res.status(201).send({ message: "An Email sent to your account please verify", success: true });
+    const OTP = JSON.parse(generateOTP());
+    const newPhoneNumber = `${contactNumber}`;
+    const sec = 120;
+    const message = `Dear user, OTP for resetting the Password for NECTERE SOLUTIONS is ${OTP}. The OTP is valid for ${sec} secs.
+    NECTERE SOLUTIONS`
+    const apiUrl = `https:webpostservice.com/sendsms_v2.0/sendsms.php?apikey=${process.env.apikey}&type=${process.env.TYPE}&sender=${process.env.sender}&mobile=${newPhoneNumber}&message=${message}&peId=${process.env.PEID}&tempId=${process.env.TEMPID}&username=${process.env.username}&password=${process.env.password}`; // Replace with the API endpoint URL
+    user.otp = OTP;
+    user.otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 
+    user.save();
+    
+    axios.get(apiUrl)
+    .then(response => {
+      console.log(response.data);
+      const token = generateAccessToken(user);
+      return res.status(201).json({ message: "An OTP send to your account number, Please verify", data : token})
+    })
+    .catch(error => {
+      console.error(error);
+    });
     } catch (error) {
         return res.status(400).send({ message: "An error occured" });
     }
@@ -184,6 +210,42 @@ export async function validateUserEmail(req: Request, res: Response) {
         res.status(400).send("An error occured");
     }
 };
+export async function verifyOTP(req: Request, res: Response){
+    const { otp } = req.body;
+    const authHeader = req.headers['authorization'] as string | undefined;
+    const token = authHeader && authHeader.split(' ')[1]
+
+  if (!otp || !token) {
+    res.status(400).send({ message: 'Missing OTP or token' });
+    return;
+  }
+
+  const decodedToken = jwt.decode(token) as any;
+  const userId = decodedToken.id;
+
+  userModal.findById(userId, (err, user) => {
+    if (err) {
+      res.status(500).send({ message: err });
+    } else if (!user) {
+      res.status(404).send({ message: 'User not found' });
+    } else if (user.otp !== otp) {
+      res.status(401).send({ message: 'Invalid OTP' });
+    } else if (user.otpExpires < new Date()) {
+      res.status(401).send({ message: 'OTP expired'});
+    } else {
+      user.otp = undefined;
+      user.otpExpires = undefined;
+      user.save((err) => {
+        if (err) {
+          res.status(500).send({ message: err });
+        } else {
+            user.password = ""
+          res.send({ message: 'OTP verified successfully' , data : user});
+        }
+      });
+    }
+  });
+}
 export async function deleteUser(req: Request, res: Response) {
     try {
         let { contactNumber, id } = req.params;
