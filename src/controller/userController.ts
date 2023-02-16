@@ -86,9 +86,6 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
     existingUser.otp = OTP;
     existingUser.otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 
     existingUser.save();
-    // const apiKey = 'TmVjdGVyZVQ6Y3A1RUVSOEo='; // Replace with your actual API key
-    // const phone = newPhoneNumber; // Replace with the phone number of the recipient
-    // const code = OTP; // Replace with your actual verification code
     
     axios.get(apiUrl)
     .then(response => {
@@ -153,30 +150,46 @@ export async function loginSuperAdmin(req: Request, res: Response) {
 };
 export async function verifyUserEmail(req: Request, role: string, res: Response) {
     try {
-        const { email, password } = req.body;
-        const user = await userModal.findOne({ email: email, "IsActive": true }) as any
+        const { contactNumber, password } = req.body;
+        const user = await userModal.findOne({ contactNumber: contactNumber, "IsActive": true }) as any
         var validPassword;
         if (user) {
             validPassword = await bcrypt.compare(password, user.password);
         }
         if (!user || !validPassword) {
-            return res.json({ message: "Email or password is invalid" })
+            return res.json({ message: "Contact Number or password is invalid" })
         }
         if (user.role != role) {
             return res.json({ message: "Please login from the right portal..." })
         }
-        const secret: any = process.env.JWTSECRET_KEY;
-        const payload = {
-            email: user.email,
-            userId: user._id
+        const generateOTP = (length = 6) => {
+            let otp = ''
+        
+            for (let i = 0; i < length; i++) {
+                otp += Math.floor(Math.random() * 10)
+            }
+        
+            return otp
         }
-        const token = jwt.sign(payload, secret, { expiresIn: '5m' });
-        const message = `Kindly Click on the link to login 
-
-        ${process.env.BASE_URL}/login-superadmin/verify/${user._id}/${token}`;
-        await sendEmail(email, "Verify Email", message);
-
-        return res.status(201).send({ message: "An Email sent to your account please verify", success: true });
+    const OTP = JSON.parse(generateOTP());
+    const newPhoneNumber = `${contactNumber}`;
+    const sec = 120;
+    const message = `Dear user, OTP for resetting the Password for NECTERE SOLUTIONS is ${OTP}. The OTP is valid for ${sec} secs.
+    NECTERE SOLUTIONS`
+    const apiUrl = `https:webpostservice.com/sendsms_v2.0/sendsms.php?apikey=${process.env.apikey}&type=${process.env.TYPE}&sender=${process.env.sender}&mobile=${newPhoneNumber}&message=${message}&peId=${process.env.PEID}&tempId=${process.env.TEMPID}&username=${process.env.username}&password=${process.env.password}`; // Replace with the API endpoint URL
+    user.otp = OTP;
+    user.otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 
+    user.save();
+    
+    axios.get(apiUrl)
+    .then(response => {
+      console.log(response.data);
+      const token = generateAccessToken(user);
+      return res.status(201).json({ message: "An OTP send to your account number, Please verify", data : token})
+    })
+    .catch(error => {
+      console.error(error);
+    });
     } catch (error) {
         return res.status(400).send({ message: "An error occured" });
     }
@@ -226,6 +239,7 @@ export async function verifyOTP(req: Request, res: Response){
         if (err) {
           res.status(500).send({ message: err });
         } else {
+            user.password = ""
           res.send({ message: 'OTP verified successfully' , data : user});
         }
       });

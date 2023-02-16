@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/register-superadmin', superAdminRegister)
 router.post('/login-superadmin', loginSuperAdmin)
-router.get('/login-superadmin/verify/:id/:token', validateUserEmail)
+// router.get('/login-superadmin/verify/:id/:token', validateUserEmail)
 
 // router.post('/signup',signUp);
 // router.post('/register-user', (req:any,res:Response,next:NextFunction)=>{ checkRole(req,res,next,['superadmin'])},superAdminRegister)
