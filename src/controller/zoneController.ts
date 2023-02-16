@@ -185,7 +185,6 @@ export async function getAllVillage(req: Request, res: Response) {
 }
 export async function getAllZone(req: Request, res: Response) {
     try {
-        let { id } =  req.params;
         let zoneList = await zoneModal.find({})
         return res.status(201).send({mesage : "fetched successfully", success: true, result : zoneList})
     } catch (error) {
