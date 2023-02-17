@@ -72,16 +72,21 @@ export async function addNewVillage(req: Request, res: Response) {
 export async function updateZone(req: Request, res: Response) {
     try {
         let {districtName, blockName,blockUniqueId , villageName, villageUniqueId} = req.body
-        await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(req.params.id)},
+        let { id } =  req.params;
+        let zone = await zoneModal.find({_id : new mongoose.Types.ObjectId(id)})
+        if(!zone) return res.status(400).send({mesage : "This Id is not exist, Invalid ID"})
+
+        await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id)},
         {$set : {districtName : districtName}})
-        await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(req.params.id)},
+        await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id)},
             {$set : {"blocks.$[e].blockName" : blockName}},
             {arrayFilters:[{"e.blockUniqueId":blockUniqueId}]})
-        await zoneModal.findOneAndUpdate({"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId}}},
+        await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId}}},
                 {$set : {"blocks.$[e].blockUniqueId.$[f].villageName" : villageName}},
                 {arrayFilters:[{"e.blockUniqueId":blockUniqueId,"f.villageUniqueId":villageUniqueId}]})
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error)
+        res.status(500).send();
     }
 }
 export async function deleteZone(req: Request, res: Response) {
@@ -112,7 +117,7 @@ export async function deleteBlockOrVillage(req: Request, res: Response) {
         }
         return res.status(201).send({mesage : "Deleted successfully", success: true})
     } catch (error) {
-        res.status(500).send(error);
+        res.status(500).send({ message: "Internal Server Error", error: JSON.stringify(error), success: false });
     }
 }
 export async function getZoneById(req: Request, res: Response) {
