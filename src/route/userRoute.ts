@@ -1,6 +1,6 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
 import {checkRole} from '../utils/user-auth'
-import { deleteUser, forgetPassword, logIn, loginSuperAdmin, signUp, superAdminRegister, updateUser,  verifyOTP} from '../controller/userController';
+import { deleteUser, forgetPassword, logIn,getAllUser, loginSuperAdmin, signUp, superAdminRegister, updateUser,  verifyOTP} from '../controller/userController';
 const router = express.Router();
 
 router.post('/register-superadmin', superAdminRegister)
@@ -16,6 +16,7 @@ router.post('/login/verifyotp', verifyOTP);
 router.post('/resetpassword', forgetPassword)
 router.delete('/deleteuser/:id',  deleteUser)
 router.post('/updateuser/:id',  updateUser)
+router.get('/getalluser',  getAllUser)
 
 
 export default router;
