@@ -194,22 +194,22 @@ export async function verifyUserEmail(req: Request, role: string, res: Response)
         return res.status(400).send({ message: "An error occured" });
     }
 };
-export async function validateUserEmail(req: Request, res: Response) {
-    try {
-        let { id, token } = req.params;
-        const user = await userModal.findOne({ _id: new mongoose.Types.ObjectId(id) });
-        if (!user) return res.status(400).send("Invalid link");
-        const secret: any = process.env.JWTSECRET_KEY
-        jwt.verify(token, secret, (err: any, user: any) => {
-            if (err) return res.status(403).send("Invalid link");
-        })
+// export async function validateUserEmail(req: Request, res: Response) {
+//     try {
+//         let { id, token } = req.params;
+//         const user = await userModal.findOne({ _id: new mongoose.Types.ObjectId(id) });
+//         if (!user) return res.status(400).send("Invalid link");
+//         const secret: any = process.env.JWTSECRET_KEY
+//         jwt.verify(token, secret, (err: any, user: any) => {
+//             if (err) return res.status(403).send("Invalid link");
+//         })
 
-        const jwtToken = generateAccessToken(user)
-        res.send({ message: "email verified sucessfully", user, jwtToken });
-    } catch (error) {
-        res.status(400).send("An error occured");
-    }
-};
+//         const jwtToken = generateAccessToken(user)
+//         res.send({ message: "email verified sucessfully", user, jwtToken });
+//     } catch (error) {
+//         res.status(400).send("An error occured");
+//     }
+// };
 export async function verifyOTP(req: Request, res: Response){
     const { otp } = req.body;
     const authHeader = req.headers['authorization'] as string | undefined;
