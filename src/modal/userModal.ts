@@ -18,6 +18,7 @@ const userSchema = new Schema({
     },
     contactNumber:{
         type :Number,
+        required : true 
     },
     UniqueIDNumber:{
         type :Number, 
@@ -53,8 +54,7 @@ const userSchema = new Schema({
     otp: { type: String },
   otpExpires: { type: Date },
     ReportingAuthorityName:{
-        type :String,
-        required : true
+        type :String
     },
     NoofSurveyconducted:{
         type :Number,
