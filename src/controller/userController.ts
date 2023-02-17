@@ -270,6 +270,16 @@ export async function deleteUser(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function getAllUser(req: Request, res: Response) {
+    try {
+        let userList = await userModal.find({ IsActive: true })
+        return res.status(200).json({ message: `User list successfully.`, data: userList })
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
 export async function updateUser(req: Request, res: Response) {
     try {
         if (!req.body) return res.status(400).send({ message: 'Please send required field to update' })
