@@ -2,6 +2,25 @@ import express, { NextFunction, Request, Response } from 'express'
 import mongoose from 'mongoose';
 import deptModal from '../modal/departmentModal'
 
+
+
+
+import  xlsx from'xlsx';
+import userModal from '../modal/userModal';
+
+export async function uploadExcelData(req: any, res: any) {
+    try {
+        let path = req.body.path;
+        const workbook = xlsx.readFile(path);
+        const sheetName = workbook.SheetNames[0];
+        const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+   await deptModal.insertMany(sheetData, function(err, result) {
+    console.log(`${result} documents were inserted`)
+   })
+    } catch (error) {
+        res.status(500).send(error);
+    }
+}
 export async function addNewDepartment(req: Request, res: Response) {
     try {
         let { deptName, schemeName, schemeId, deptId } = req.body

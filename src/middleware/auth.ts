@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 // import multer from 'multer'
 // import path from 'path'
-// import fs from 'fs';
+import fs from 'fs';
 
 dotenv.config();
 const secret: string = (process.env.JWTSECRET_KEY) ? process.env.JWTSECRET_KEY : "";
@@ -85,3 +85,33 @@ export function generateAccessToken(user: any) {
 //     {name: 'artistLogo', maxCount: 1},
 // ]);
 
+import multer from "multer";
+
+const excelFilter = (req, file, cb) => {
+  if (
+    file.mimetype.includes("excel") ||
+    file.mimetype.includes("spreadsheetml")
+  ) {
+    cb(null, true);
+  } else {
+    cb("Please upload only excel file.", false);
+  }
+};
+
+var storage = multer.diskStorage({
+    destination: (req, file, callback) => {
+        const path = `./uploads/`;
+        
+        fs.mkdirSync(path, { recursive: true })
+        callback(null, path)
+    },
+    filename: (req, file, cb) => {
+        cb(null, file.fieldname + '-' + Date.now() + '-' + file.originalname)
+    }
+});
+
+export const upload = multer(
+    { 
+    storage: storage, 
+    fileFilter: excelFilter }
+).single("deptName");

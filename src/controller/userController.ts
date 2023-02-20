@@ -61,7 +61,8 @@ export async function signUp(req: Request, res: Response){
 //     })
 // }
 export async function logIn(req: Request, res: Response, next: NextFunction) {
-    let { password, email} = req.body;
+    try {
+        let { password, email} = req.body;
     if (!email || !password) return res.status(400).json({ message: "Email and Password is required" })
 
     const user = await userModal.findOne({ email: email, "IsActive": true }) as any
@@ -75,7 +76,11 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
     }
     user.password = ""
     const token = generateAccessToken(user);
-    return res.status(201).json({message:"Logged in successfully",token:token, data: user})
+    return res.status(201).json({message:"Logged in successfully",token:token, data: user,success:true})
+    } catch(error){
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
 }
 export async function superAdminRegister(req: Request, res: Response) {
     let searchQuery = {
