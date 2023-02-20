@@ -70,8 +70,8 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
     if (user) {
         validPassword = await bcrypt.compare(password, user.password);
     }
-    if (!user || !validPassword) {
-        return res.json({ message: "Contact Number or password is invalid" })
+    if (!validPassword) {
+        return res.json({ message: "password is invalid" })
     }
     const token = generateAccessToken(user);
     return res.status(201).json({message:"Logged in successfully",token:token, data: user})
