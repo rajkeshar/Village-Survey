@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express'
 import mongoose from 'mongoose';
 import deptModal from '../modal/departmentModal'
-import  xlsx from'xlsx';
+import * as xlsx from "xlsx/xlsx";
 
 export async function uploadExcelData(req: any, res: any) {
     try {
