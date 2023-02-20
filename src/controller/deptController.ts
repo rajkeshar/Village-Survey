@@ -1,12 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express'
 import mongoose from 'mongoose';
 import deptModal from '../modal/departmentModal'
-
-
-
-
 import  xlsx from'xlsx';
-import userModal from '../modal/userModal';
 
 export async function uploadExcelData(req: any, res: any) {
     try {
@@ -18,7 +13,8 @@ export async function uploadExcelData(req: any, res: any) {
     console.log(`${result} documents were inserted`)
    })
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function addNewDepartment(req: Request, res: Response) {
@@ -51,7 +47,8 @@ export async function addNewDepartment(req: Request, res: Response) {
             return res.status(201).send({ message: "Succesfully added  scheme",data:updatedept, success: true });
         }
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function updateDepartment(req: Request, res: Response) {
@@ -69,7 +66,8 @@ export async function updateDepartment(req: Request, res: Response) {
         let result = await deptModal.findOneAndUpdate(filter, setQuery, arrayFilter);
         return res.status(201).send({ message: 'Successfully updated', data: result, success: true });
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function getDepartmentById(req: Request, res: Response) {
@@ -81,7 +79,8 @@ export async function getDepartmentById(req: Request, res: Response) {
 
         return res.status(201).send({ message: 'Successfully updated', data: dept, success: true });
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function deleteDepartment(req: Request, res: Response) {
@@ -92,7 +91,8 @@ export async function deleteDepartment(req: Request, res: Response) {
         if (!dept) res.status(404).send({ message: "No item found" });
         return res.status(200).send({ message: 'Successfully deleted', success: true });
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function getAllDepartment(req: Request, res: Response) {
@@ -102,7 +102,8 @@ export async function getAllDepartment(req: Request, res: Response) {
         deptList.map(x =>  {deptArray.push(x.deptName)});
         res.send({ message: "department list fetched successfully", data: deptArray });
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function getAllDepartmentAndScheme(req: Request, res: Response) {
@@ -110,7 +111,8 @@ export async function getAllDepartmentAndScheme(req: Request, res: Response) {
     try {
         res.send({ message: "department list fetched successfully", data: deptList });
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function getSchemeByDepartment(req: Request, res: Response) {
@@ -121,7 +123,8 @@ export async function getSchemeByDepartment(req: Request, res: Response) {
         let schemeDetail = dept.schemeDetails
         res.send({ message: "scheme list fetched successfully", data: schemeDetail });
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function deleteScheme(req: Request, res: Response) {
@@ -133,6 +136,7 @@ export async function deleteScheme(req: Request, res: Response) {
         { $pull: { 'schemeDetails':{ 'schemeName': schemename }}}) 
         res.send({ message: "scheme list fetched successfully", data: result });
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }

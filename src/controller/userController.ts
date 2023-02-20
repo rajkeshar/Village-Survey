@@ -372,30 +372,30 @@ export async function forgetPassword(req: Request, res: Response) {
 //     }
 // }
 
-export async function verifyResetPassword(req: Request, res: Response) {
-    //make sure user exist in db
-    try {
-        const { email, token } = req.params;
-        //check if this id exist in db
-        const user = await userModal.findOne({ email: email })
-        if (!user) {
-            return res.json({ message: "Invaild email" })
-        } else {
-            //user exist , generate otp 
-            const secret = jwtkey + user.password;
-            try {
-                const payload = jwt.verify(token, secret)
-                res.send({ message: 'reset password', email: user.email });
-            } catch (error) {
-                console.log(error);
-                res.send(error);
-            }
-        }
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Internal Server Error" })
-    }
-}
+// export async function verifyResetPassword(req: Request, res: Response) {
+//     //make sure user exist in db
+//     try {
+//         const { email, token } = req.params;
+//         //check if this id exist in db
+//         const user = await userModal.findOne({ email: email })
+//         if (!user) {
+//             return res.json({ message: "Invaild email" })
+//         } else {
+//             //user exist , generate otp 
+//             const secret = jwtkey + user.password;
+//             try {
+//                 const payload = jwt.verify(token, secret)
+//                 return res.status(200).json({ message: 'reset password', email: user.email ,sucess:true});
+//             } catch (error) {
+//                 console.log(error);
+//                 res.send(error);
+//             }
+//         }
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+//     }
+// }
 export async function getUserById(req: Request, res: Response) {
     try {
         let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(req.params?.id), IsActive: true });
