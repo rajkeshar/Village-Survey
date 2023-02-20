@@ -73,6 +73,7 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
     if (!validPassword) {
         return res.json({ message: "password is invalid" })
     }
+    user.password = ""
     const token = generateAccessToken(user);
     return res.status(201).json({message:"Logged in successfully",token:token, data: user})
 }
