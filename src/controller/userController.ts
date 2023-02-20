@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express'
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import  axios  from 'axios';
+import axios from 'axios';
 import otpGenerator from "otp-generator";
 import userModal from '../modal/userModal'
 import otpModal from '../modal/userOTPModal'
@@ -23,79 +23,58 @@ async function hashPassword(plaintextPassword: string | Buffer) {
     const hash = await bcrypt.hash(plaintextPassword, 10);
     return hash;
 }
-export async function signUp(req: Request, res: Response, next: NextFunction) {
-    let { fullname,role, email, password, contactNumber, ReportingAuthorityName, EmpID,
-        UniqueIDNumber,AssignedSurveyDepartment, Designation, CurrentVillageName, CurrentTalukaName, NoofSurveyconducted } = req.body;
-
-    if (!contactNumber || !fullname || !email || !ReportingAuthorityName || !EmpID) return res.status(400).json({ message: "Kindly send all required fields" })
-    const existingUser = await userModal.findOne({ contactNumber : contactNumber });
-
-    if (existingUser) return res.status(400).json({ message: "This Number is already registered!" })
-
-
-    contactNumber = '+91' + contactNumber;
-    bcrypt.hash(req.body.password, 10, async (err, encrypted) => {
-        const saveUser = new userModal(
-            {
-                _id: new mongoose.Types.ObjectId(),
-                fullname: fullname, email: email, password: encrypted,
-                contactNumber: contactNumber,
-                role: role,
-                ReportingAuthorityName : ReportingAuthorityName,
-                EmpID : EmpID,
-                UniqueIDNumber : UniqueIDNumber,
-                AssignedSurveyDepartment : AssignedSurveyDepartment,
-                Designation : Designation,
-                CurrentVillageName : CurrentVillageName,
-                CurrentTalukaName : CurrentTalukaName,
-                NoofSurveyconducted : NoofSurveyconducted
-            });
-        let newUser = await saveUser.save();
-        let user = newUser.toObject()
-        user["password"] = "";
-
-        res.status(201).json({ message: "User Created Successfully", data: user })
-    })
+export async function signUp(req: Request, res: Response){
+    createUser(req,'admin',res);
 }
+// export async function createUser(req: Request, res: Response, next: NextFunction) {
+//     let { fullname, role, email, password, contactNumber, ReportingAuthorityName, EmpID,
+//         UniqueIDNumber, AssignedSurveyDepartment, Designation, CurrentVillageName, CurrentTalukaName, NoofSurveyconducted } = req.body;
+
+//     if (!contactNumber || !fullname || !email || !ReportingAuthorityName || !EmpID) return res.status(400).json({ message: "Kindly send all required fields" })
+//     const existingUser = await userModal.findOne({ contactNumber: contactNumber });
+
+//     if (existingUser) return res.status(400).json({ message: "This Number is already registered!" })
+
+
+//     contactNumber = '+91' + contactNumber;
+//     bcrypt.hash(req.body.password, 10, async (err, encrypted) => {
+//         const saveUser = new userModal(
+//             {
+//                 _id: new mongoose.Types.ObjectId(),
+//                 fullname: fullname, email: email, password: encrypted,
+//                 contactNumber: contactNumber,
+//                 role: role,
+//                 ReportingAuthorityName: ReportingAuthorityName,
+//                 EmpID: EmpID,
+//                 UniqueIDNumber: UniqueIDNumber,
+//                 AssignedSurveyDepartment: AssignedSurveyDepartment,
+//                 Designation: Designation,
+//                 CurrentVillageName: CurrentVillageName,
+//                 CurrentTalukaName: CurrentTalukaName,
+//                 NoofSurveyconducted: NoofSurveyconducted
+//             });
+//         let newUser = await saveUser.save();
+//         let user = newUser.toObject()
+//         user["password"] = "";
+
+//         res.status(201).json({ message: "User Created Successfully", data: user })
+//     })
+// }
 export async function logIn(req: Request, res: Response, next: NextFunction) {
-    let { contactNumber , email } = req.body;
-    if (!contactNumber) return res.status(400).json({ message: "Contact Number is required" })
+    let { password, email} = req.body;
+    if (!email || !password) return res.status(400).json({ message: "Email and Password is required" })
 
-    const existingUser = await userModal.findOne({ contactNumber: contactNumber }) as any
-    if (!existingUser) return res.status(400).json({ message: "This User is not exist!,Kindy SignUp with your phone number" })
-    // const OTP = otpGenerator.generate(6,
-    //     {
-    //         digits: true, upperCaseAlphabets: false, specialChars: false
-    //     });
-
-        const generateOTP = (length = 6) => {
-            let otp = ''
-        
-            for (let i = 0; i < length; i++) {
-                otp += Math.floor(Math.random() * 10)
-            }
-        
-            return otp
-        }
-    const OTP = JSON.parse(generateOTP());
-    const newPhoneNumber = `${contactNumber}`;
-    const sec = 120;
-    const message = `Dear user, OTP for resetting the Password for NECTERE SOLUTIONS is ${OTP}. The OTP is valid for ${sec} secs.
-    NECTERE SOLUTIONS`
-    const apiUrl = `https:webpostservice.com/sendsms_v2.0/sendsms.php?apikey=${process.env.apikey}&type=${process.env.TYPE}&sender=${process.env.sender}&mobile=${newPhoneNumber}&message=${message}&peId=${process.env.PEID}&tempId=${process.env.TEMPID}&username=${process.env.username}&password=${process.env.password}`; // Replace with the API endpoint URL
-    existingUser.otp = OTP;
-    existingUser.otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 
-    existingUser.save();
-    
-    axios.get(apiUrl)
-    .then(response => {
-      console.log(response.data);
-      const token = generateAccessToken(existingUser);
-      return res.status(201).json({ message: "OTP send successfully", data : token})
-    })
-    .catch(error => {
-      console.error(error);
-    });
+    const user = await userModal.findOne({ email: email, "IsActive": true }) as any
+    if(!user) return res.status(400).json({message :"User Is not exist"})
+    var validPassword;
+    if (user) {
+        validPassword = await bcrypt.compare(password, user.password);
+    }
+    if (!user || !validPassword) {
+        return res.json({ message: "Contact Number or password is invalid" })
+    }
+    const token = generateAccessToken(user);
+    return res.status(201).json({message:"Logged in successfully",token:token, data: user})
 }
 export async function superAdminRegister(req: Request, res: Response) {
     let searchQuery = {
@@ -109,7 +88,7 @@ export async function superAdminRegister(req: Request, res: Response) {
 export async function createUser(req: any, role: string, res: Response) {
 
     let { fullname, email, password, contactNumber, ReportingAuthorityName, EmpID,
-        UniqueIDNumber,AssignedSurveyDepartment, Designation, CurrentVillageName, CurrentTalukaName, NoofSurveyconducted } = req.body;
+        UniqueIDNumber, AssignedSurveyDepartment, Designation, CurrentVillageName, CurrentTalukaName, NoofSurveyconducted } = req.body;
     try {
 
         const existingUser = await userModal.findOne({ email: email, IsActive: true });
@@ -123,14 +102,14 @@ export async function createUser(req: any, role: string, res: Response) {
                     fullname: fullname, email: email, password: encrypted,
                     contactNumber: contactNumber,
                     role: role,
-                    ReportingAuthorityName : ReportingAuthorityName,
-                    EmpID : EmpID,
-                    UniqueIDNumber : UniqueIDNumber,
-                    AssignedSurveyDepartment : AssignedSurveyDepartment,
-                    Designation : Designation,
-                    CurrentVillageName : CurrentVillageName,
-                    CurrentTalukaName : CurrentTalukaName,
-                    NoofSurveyconducted : NoofSurveyconducted
+                    ReportingAuthorityName: ReportingAuthorityName,
+                    EmpID: EmpID,
+                    UniqueIDNumber: UniqueIDNumber,
+                    AssignedSurveyDepartment: AssignedSurveyDepartment,
+                    Designation: Designation,
+                    CurrentVillageName: CurrentVillageName,
+                    CurrentTalukaName: CurrentTalukaName,
+                    NoofSurveyconducted: NoofSurveyconducted
                 });
             let newUser = await saveUser.save();
             let user = newUser.toObject()
@@ -164,32 +143,32 @@ export async function verifyUserEmail(req: Request, role: string, res: Response)
         }
         const generateOTP = (length = 6) => {
             let otp = ''
-        
+
             for (let i = 0; i < length; i++) {
                 otp += Math.floor(Math.random() * 10)
             }
-        
+
             return otp
         }
-    const OTP = JSON.parse(generateOTP());
-    const newPhoneNumber = `${contactNumber}`;
-    const sec = 120;
-    const message = `Dear user, OTP for resetting the Password for NECTERE SOLUTIONS is ${OTP}. The OTP is valid for ${sec} secs.
+        const OTP = JSON.parse(generateOTP());
+        const newPhoneNumber = `${contactNumber}`;
+        const sec = 120;
+        const message = `Dear user, OTP for resetting the Password for NECTERE SOLUTIONS is ${OTP}. The OTP is valid for ${sec} secs.
     NECTERE SOLUTIONS`
-    const apiUrl = `https:webpostservice.com/sendsms_v2.0/sendsms.php?apikey=${process.env.apikey}&type=${process.env.TYPE}&sender=${process.env.sender}&mobile=${newPhoneNumber}&message=${message}&peId=${process.env.PEID}&tempId=${process.env.TEMPID}&username=${process.env.username}&password=${process.env.password}`; // Replace with the API endpoint URL
-    user.otp = OTP;
-    user.otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 
-    user.save();
-    
-    axios.get(apiUrl)
-    .then(response => {
-      console.log(response.data);
-      const token = generateAccessToken(user);
-      return res.status(201).json({ message: "An OTP send to your account number, Please verify", data : token})
-    })
-    .catch(error => {
-      console.error(error);
-    });
+        const apiUrl = `https:webpostservice.com/sendsms_v2.0/sendsms.php?apikey=${process.env.apikey}&type=${process.env.TYPE}&sender=${process.env.sender}&mobile=${newPhoneNumber}&message=${message}&peId=${process.env.PEID}&tempId=${process.env.TEMPID}&username=${process.env.username}&password=${process.env.password}`; // Replace with the API endpoint URL
+        user.otp = OTP;
+        user.otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 
+        user.save();
+
+        axios.get(apiUrl)
+            .then(response => {
+                console.log(response.data);
+                const token = generateAccessToken(user);
+                return res.status(201).json({ message: "An OTP send to your account number, Please verify", data: token })
+            })
+            .catch(error => {
+                console.error(error);
+            });
     } catch (error) {
         return res.status(400).send({ message: "An error occured" });
     }
@@ -210,41 +189,50 @@ export async function verifyUserEmail(req: Request, role: string, res: Response)
 //         res.status(400).send("An error occured");
 //     }
 // };
-export async function verifyOTP(req: Request, res: Response){
-    const { otp } = req.body;
+export async function verifyOTP(req: Request, res: Response) {
+    const { otp , confirmPassword} = req.body;
     const authHeader = req.headers['authorization'] as string | undefined;
     const token = authHeader && authHeader.split(' ')[1]
 
-  if (!otp || !token) {
-    res.status(400).send({ message: 'Missing OTP or token' });
-    return;
-  }
-
-  const decodedToken = jwt.decode(token) as any;
-  const userId = decodedToken.id;
-
-  userModal.findById(userId, (err, user) => {
-    if (err) {
-      res.status(500).send({ message: err });
-    } else if (!user) {
-      res.status(404).send({ message: 'User not found' });
-    } else if (user.otp !== otp) {
-      res.status(401).send({ message: 'Invalid OTP' });
-    } else if (user.otpExpires < new Date()) {
-      res.status(401).send({ message: 'OTP expired'});
-    } else {
-      user.otp = undefined;
-      user.otpExpires = undefined;
-      user.save((err) => {
-        if (err) {
-          res.status(500).send({ message: err });
-        } else {
-            user.password = ""
-          res.send({ message: 'OTP verified successfully' , data : user});
-        }
-      });
+    if (!otp || !token) {
+        res.status(400).send({ message: 'Missing OTP or token' });
+        return;
     }
-  });
+    if (!confirmPassword) {
+        res.status(400).send({ message: 'Missing Confirm Password' });
+        return;
+    }
+
+    const decodedToken = jwt.decode(token) as any;
+    const userId = decodedToken.id;
+
+    userModal.findById(userId, (err, user) => {
+        if (err) {
+            res.status(500).send({ message: err });
+        } else if (!user) {
+            res.status(404).send({ message: 'User not found' });
+        } else if (user.otp !== otp) {
+            res.status(401).send({ message: 'Invalid OTP' });
+        } else if (user.otpExpires < new Date()) {
+            res.status(401).send({ message: 'OTP expired' });
+        } else {
+            user.otp = undefined;
+            user.otpExpires = undefined;
+            user.save((err) => {
+                if (err) {
+                    res.status(500).send({ message: err });
+                } else {
+                    bcrypt.hash(confirmPassword, 10, (err, encrypted) => {
+                                            userModal.findOneAndUpdate(userId, {
+                                                password: encrypted
+                                            })
+                                        })
+                                        //hash the pass
+                    res.status(201).json({ message: 'Password updates successfully', data: user.email })
+                }
+            });
+        }
+    });
 }
 export async function deleteUser(req: Request, res: Response) {
     try {
@@ -298,38 +286,42 @@ export async function updateUser(req: Request, res: Response) {
     }
 }
 export async function forgetPassword(req: Request, res: Response) {
-    //make sure user exist in db
     try {
-        const { email } = req.body;
-        let baseURL = process.env.BASEURL as any
+        let { contactNumber } = req.body;
+        if (!contactNumber) return res.status(400).json({ message: "Contact Number is required" })
 
-        // const checkAdmin = await superAdminValidator(req.query?.email as any);
-        // if (!(checkAdmin)) return res.json({ message: "Only SuperAdmin can do this!" })
+        const existingUser = await userModal.findOne({ contactNumber: contactNumber ,'IsActive' :true }) as any
+        if (!existingUser) return res.status(400).json({ message: "This User is not exist!,Kindy SignUp with your phone number" })
 
-        const user = await userModal.findOne({ email: email })
-        if (!user) {
-            return res.json({ message: "User not found" })
-        } else {
-            //user exist , generate otp 
-            const secret = jwtkey + user.password;
-            const payload = {
-                email: user.email,
-                _id: user._id
+
+        const generateOTP = (length = 6) => {
+            let otp = ''
+
+            for (let i = 0; i < length; i++) {
+                otp += Math.floor(Math.random() * 10)
             }
-            const token = jwt.sign(payload, secret, { expiresIn: '5' });
-            const link = `${baseURL}/api/user/resetpassword/${user._id}/${token}`;
-            const data = {
-                from: "noreply@village_survey.com",
-                to: email,
-                subject: "Passord Reset Link",
-                html: `
-                <h2>Please click on the link to reset your password</h2>
-                <p>${link}</p>
-                `
-            }
-            console.log(link);
-            res.send({ message: "Password reset link send successfully", data: data });
+
+            return otp
         }
+        const OTP = JSON.parse(generateOTP());
+        const newPhoneNumber = `${contactNumber}`;
+        const sec = 120;
+        const message = `Dear user, OTP for resetting the Password for NECTERE SOLUTIONS is ${OTP}. The OTP is valid for ${sec} secs.
+    NECTERE SOLUTIONS`
+        const apiUrl = `https:webpostservice.com/sendsms_v2.0/sendsms.php?apikey=${process.env.apikey}&type=${process.env.TYPE}&sender=${process.env.sender}&mobile=${newPhoneNumber}&message=${message}&peId=${process.env.PEID}&tempId=${process.env.TEMPID}&username=${process.env.username}&password=${process.env.password}`; // Replace with the API endpoint URL
+        existingUser.otp = OTP;
+        existingUser.otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 
+        existingUser.save();
+
+        axios.get(apiUrl)
+            .then(response => {
+                console.log(response.data);
+                const token = generateAccessToken(existingUser);
+                return res.status(201).json({ message: "OTP send successfully", data: token })
+            })
+            .catch(error => {
+                console.error(error);
+            });
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: "Internal Server Error" })
