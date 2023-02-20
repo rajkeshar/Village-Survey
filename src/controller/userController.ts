@@ -23,8 +23,8 @@ async function hashPassword(plaintextPassword: string | Buffer) {
     const hash = await bcrypt.hash(plaintextPassword, 10);
     return hash;
 }
-export async function signUp(req: Request, res: Response){
-    createUser(req,'admin',res);
+export async function signUp(req: Request, res: Response) {
+    createUser(req, 'admin', res);
 }
 // export async function createUser(req: Request, res: Response, next: NextFunction) {
 //     let { fullname, role, email, password, contactNumber, ReportingAuthorityName, EmpID,
@@ -61,20 +61,26 @@ export async function signUp(req: Request, res: Response){
 //     })
 // }
 export async function logIn(req: Request, res: Response, next: NextFunction) {
-    let { password, email} = req.body;
-    if (!email || !password) return res.status(400).json({ message: "Email and Password is required" })
+    try {
+        let { password, email } = req.body;
+        if (!email || !password) return res.status(400).json({ message: "Email and Password is required" })
 
-    const user = await userModal.findOne({ email: email, "IsActive": true }) as any
-    if(!user) return res.status(400).json({message :"User Is not exist"})
-    var validPassword;
-    if (user) {
-        validPassword = await bcrypt.compare(password, user.password);
+        const user = await userModal.findOne({ email: email, "IsActive": true }) as any
+        if (!user) return res.status(400).json({ message: "User Is not exist" })
+        var validPassword;
+        if (user) {
+            validPassword = await bcrypt.compare(password, user.password);
+        }
+        if (!validPassword) {
+            return res.json({ message: "password is invalid" })
+        }
+        user.password = ""
+        const token = generateAccessToken(user);
+        return res.status(201).json({ message: "Logged in successfully", token: token, data: user, success: true })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
-    if (!validPassword) {
-        return res.json({ message: "password is invalid" })
-    }
-    const token = generateAccessToken(user);
-    return res.status(201).json({message:"Logged in successfully",token:token, data: user})
 }
 export async function superAdminRegister(req: Request, res: Response) {
     let searchQuery = {
@@ -190,7 +196,7 @@ export async function verifyUserEmail(req: Request, role: string, res: Response)
 //     }
 // };
 export async function verifyOTP(req: Request, res: Response) {
-    const { otp , confirmPassword} = req.body;
+    const { otp, confirmPassword } = req.body;
     const authHeader = req.headers['authorization'] as string | undefined;
     const token = authHeader && authHeader.split(' ')[1]
 
@@ -223,11 +229,11 @@ export async function verifyOTP(req: Request, res: Response) {
                     res.status(500).send({ message: err });
                 } else {
                     bcrypt.hash(confirmPassword, 10, (err, encrypted) => {
-                                            userModal.findOneAndUpdate(userId, {
-                                                password: encrypted
-                                            })
-                                        })
-                                        //hash the pass
+                        userModal.findOneAndUpdate(userId, {
+                            password: encrypted
+                        })
+                    })
+                    //hash the pass
                     res.status(201).json({ message: 'Password updates successfully', data: user.email })
                 }
             });
@@ -290,7 +296,7 @@ export async function forgetPassword(req: Request, res: Response) {
         let { contactNumber } = req.body;
         if (!contactNumber) return res.status(400).json({ message: "Contact Number is required" })
 
-        const existingUser = await userModal.findOne({ contactNumber: contactNumber ,'IsActive' :true }) as any
+        const existingUser = await userModal.findOne({ contactNumber: contactNumber, 'IsActive': true }) as any
         if (!existingUser) return res.status(400).json({ message: "This User is not exist!,Kindy SignUp with your phone number" })
 
 
@@ -388,5 +394,15 @@ export async function verifyResetPassword(req: Request, res: Response) {
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: "Internal Server Error" })
+    }
+}
+export async function getUserById(req: Request, res: Response) {
+    try {
+        let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(req.params?.id), IsActive: true });
+        if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
+        return res.status(200).json({ message: `User fetched successfully.`, data: existUser, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
