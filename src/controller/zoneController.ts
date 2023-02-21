@@ -189,18 +189,8 @@ export async function getAllBlocks(req: Request, res: Response) {
        let { distId } = req.params;
         let blockList = await zoneModal.findOne({ _id : new mongoose.Types.ObjectId(distId)}) as any
         if(!blockList) return res.status(201).send({message : "District Id is not found, Invalid ID"})
-        blockList.map( x => {
-            let blockArray=[] as any; 
-            let distName = x.districtName;
-            (x.blocks.map(y => {
-                blockArray.push({
-                    districtName : distName,
-                    blockName : y.blockName,
-                    blockUniqueId : y.blockUniqueId
-                })
-                return res.status(201).send({message : "list of blocks", data: blockArray})
-            }))
-        })
+        let result = await zoneModal.findOne({"_id" : new mongoose.Types.ObjectId(distId)},  {"blocks.blockName": 1, "blocks.blockUniqueId": 1 })           
+        return res.status(201).send({message : "list of blocks", data: result})
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -228,17 +218,16 @@ export async function getAllVillage(req: Request, res: Response) {
         let dist = await zoneModal.findOne({ _id: new mongoose.Types.ObjectId(distId), "blocks": { $elemMatch: { "blockUniqueId": blockId } } });
         if (!dist) return res.status(201).send({ message: "District Id is not found, Invalid ID" })
         let villageArray = [] as any;
-        // dist.map(x => {
-        //     let distName = x.districtName;
-            // x.blocks.map(y => { if (y.blockUniqueId === blockId) { let blockName = y.blockName;console.log(y.villages.map(z => {villageArray.push({
-            //                 distName: distName as any,
-            //                 blockName : blockName as any,
-            //                 villageName: z.villageName as any,
-            //                 villageUniqueId : z.villageUniqueId as any
-            //         })
-            // })) }
-            // })})
-        return res.status(201).send({ message: "list of blocks", data: villageArray })
+        let result = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka.villages" },
+            { $project: {
+                _id: 1,
+                districtName : 1,
+                villageName: "$blocks.taluka.villages.villageName",
+                villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
+            }}])
+        return res.status(201).send({ message: "list of blocks", data: result })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })    }
