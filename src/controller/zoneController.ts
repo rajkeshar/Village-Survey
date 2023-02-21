@@ -79,7 +79,7 @@ export async function addNewTaluka(req: Request, res: Response) {
         let { blockUniqueId, talukaName, talukaUniqueId } = req.body
         if(!blockUniqueId || !talukaName || !talukaUniqueId) return res.status(400).send({ message: "Please send all required fields" })
 
-        let isExistBlock = await zoneModal.find({"_id" :new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId}}});
+        let isExistBlock = await zoneModal.findOne({"_id" :new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId}}});
         if(!isExistBlock) res.status(400).send({ message: "This block id is not exist, Invalid ID" })
 
         let newtaluka = await zoneModal.findOneAndUpdate({"_id" :new mongoose.Types.ObjectId(id), "blocks": { $elemMatch: { "blockUniqueId": blockUniqueId } } },
@@ -98,19 +98,26 @@ export async function addNewTaluka(req: Request, res: Response) {
 }
 export async function updateZone(req: Request, res: Response) {
     try {
-        let {districtName, blockName,blockUniqueId , villageName, villageUniqueId} = req.body
+        let {districtName, blockName,blockUniqueId , villageName, talukaName, talukaUniqueId,villageUniqueId} = req.body
         let { id } =  req.params;
-        let zone = await zoneModal.find({_id : new mongoose.Types.ObjectId(id)})
+        let zone = await zoneModal.findOne({_id : new mongoose.Types.ObjectId(id)})
         if(!zone) return res.status(400).send({mesage : "This Id is not exist, Invalid ID"})
 
         await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id)},
         {$set : {districtName : districtName}})
+
         await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id)},
             {$set : {"blocks.$[e].blockName" : blockName}},
             {arrayFilters:[{"e.blockUniqueId":blockUniqueId}]})
-        await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId}}},
-                {$set : {"blocks.$[e].blockUniqueId.$[f].villageName" : villageName}},
-                {arrayFilters:[{"e.blockUniqueId":blockUniqueId,"f.villageUniqueId":villageUniqueId}]})
+
+        await zoneModal.findOneAndUpdate({ "blocks.blockUniqueId" : blockUniqueId, "blocks.taluka.talukaUniqueId" : talukaUniqueId, "blocks.taluka.villages.villageUniqueId" : villageUniqueId },
+        { $set: { "blocks.$[b].taluka.villages.$[v].villageName" : villageName } },
+        { arrayFilters: [ { "b.blockUniqueId": blockUniqueId }, { "v.villageUniqueId": villageUniqueId } ] })
+
+        await zoneModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId,"taluka.talukaUniqueId":talukaUniqueId}}},
+        {$set: { "blocks.$[e].taluka.talukaName": talukaName}},
+        {arrayFilters:[{"e.blockUniqueId":blockUniqueId}]})
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -119,7 +126,7 @@ export async function updateZone(req: Request, res: Response) {
 export async function deleteZone(req: Request, res: Response) {
     try {
         let { id } =  req.params;
-        let zone = await zoneModal.find({_id : new mongoose.Types.ObjectId(id)})
+        let zone = await zoneModal.findOne({_id : new mongoose.Types.ObjectId(id)})
         if(!zone) return res.status(400).send({mesage : "This Id is not exist, Invalid ID"})
         await zoneModal.deleteOne({_id : new mongoose.Types.ObjectId(id)})
         return res.status(201).send({mesage : "Deleted successfully", success: true})
@@ -132,7 +139,7 @@ export async function deleteBlockOrVillage(req: Request, res: Response) {
     try {
         let { id ,block} =  req.params;
         let {  blockName, villageName, blockUniqueId } = req.body;
-        let zone = await zoneModal.find({_id : new mongoose.Types.ObjectId(id)})
+        let zone = await zoneModal.findOne({_id : new mongoose.Types.ObjectId(id)})
         if(!zone) return res.status(400).send({mesage : "This Id is not exist, Invalid ID"})
 
         if( block === 'block' ) {
@@ -152,7 +159,7 @@ export async function deleteBlockOrVillage(req: Request, res: Response) {
 export async function getZoneById(req: Request, res: Response) {
     try {
         let { id } =  req.params;
-        let zone = await zoneModal.find({_id : new mongoose.Types.ObjectId(id)})
+        let zone = await zoneModal.findOne({_id : new mongoose.Types.ObjectId(id)})
         if(!zone) return res.status(400).send({mesage : "This Id is not exist, Invalid ID"})
         return res.status(201).send({mesage : "fetched successfully", success: true, result : zone})
     } catch (error) {
@@ -180,7 +187,7 @@ export async function getAllDistrict(req: Request, res: Response) {
 export async function getAllBlocks(req: Request, res: Response) {
     try {
        let { distId } = req.params;
-        let blockList = await zoneModal.find({ _id : new mongoose.Types.ObjectId(distId)});
+        let blockList = await zoneModal.findOne({ _id : new mongoose.Types.ObjectId(distId)}) as any
         if(!blockList) return res.status(201).send({message : "District Id is not found, Invalid ID"})
         blockList.map( x => {
             let blockArray=[] as any; 
@@ -199,10 +206,26 @@ export async function getAllBlocks(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function getAllTaluka(req: Request, res: Response) {
+    try {
+       let { distId } = req.params;
+        let talukaList = await zoneModal.findOne({ _id : new mongoose.Types.ObjectId(distId)}) as any
+        if(!talukaList) return res.status(201).send({message : "District Id is not found, Invalid ID"})
+        let result = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $group: { _id: "$blocks.taluka.talukaName" } },
+            { $project: { _id: 0, talukaName: "$_id" } }
+          ])
+         return res.status(201).send({message : "list of taluka", data: result})
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
 export async function getAllVillage(req: Request, res: Response) {
     try {
         let { distId, blockId } = req.params;
-        let dist = await zoneModal.find({ _id: new mongoose.Types.ObjectId(distId), "blocks": { $elemMatch: { "blockUniqueId": blockId } } });
+        let dist = await zoneModal.findOne({ _id: new mongoose.Types.ObjectId(distId), "blocks": { $elemMatch: { "blockUniqueId": blockId } } });
         if (!dist) return res.status(201).send({ message: "District Id is not found, Invalid ID" })
         let villageArray = [] as any;
         // dist.map(x => {
