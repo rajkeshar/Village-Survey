@@ -17,7 +17,15 @@ const blockSchema = new Schema({
         type :String,
         required : true
     },
+    taluka:{
+        talukaName:{
+            type :String
+        },
+        talukaUniqueId :{
+            type : String
+        },
     villages:[villageSchema]
+    }
 })
 const locationSchema = new Schema({
     districtName:{
@@ -32,5 +40,5 @@ const locationSchema = new Schema({
 { timestamps: true }
 )
 
-var zoneModal = mongoose.model('village', locationSchema)
+var zoneModal = mongoose.model('zone', locationSchema)
 export default zoneModal;

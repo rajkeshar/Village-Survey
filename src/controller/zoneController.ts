@@ -1,12 +1,11 @@
 import express, { NextFunction, Request, Response } from 'express'
 import mongoose from 'mongoose';
-import { YearlyInstance } from 'twilio/lib/rest/api/v2010/account/usage/record/yearly';
 import zoneModal from '../modal/zoneModal'
 
 export async function addNewZone(req: Request, res: Response) {
     try {
         let { blockUniqueId, blockName, villageName, villageUniqueId, zoneId,
-            districtName, pincode } = req.body
+            districtName, pincode , talukaName, talukaUniqueId} = req.body
        
         let newZone = new zoneModal({
             blockUniqueId, villageName, villageUniqueId,
@@ -26,10 +25,14 @@ export async function addNewZone(req: Request, res: Response) {
             await newZone.save();
             return res.status(201).send({ message: "Zone created succesfully", success: true, data: newZone });
         } else {
-             if (!blockName || !blockUniqueId ) return res.status(400).send({ message: "Please send blockName & blockUniqueId fields" })
+            if (!blockName || !blockUniqueId ) return res.status(400).send({ message: "Please send blockName & blockUniqueId fields" })
             let payload = {
                 blockName: blockName,
-                blockUniqueId: blockUniqueId
+                blockUniqueId: blockUniqueId,
+                taluka:{
+                    talukaName : talukaName,
+                    talukaUniqueId : talukaUniqueId
+                }
                 // 'villages': [{
                 //     villageName: villageName,
                 //     villageUniqueId: villageUniqueId
@@ -39,24 +42,24 @@ export async function addNewZone(req: Request, res: Response) {
             const updateZone = await zoneModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(zoneId) }, setQuery, { new: true });
             return res.status(201).send({ message: "Succesfully added  block", data: updateZone, success: true });
         }
-
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function addNewVillage(req: Request, res: Response) {
     try {
         let { id } = req.params;
-        let { blockUniqueId, villageUniqueId, villageName } = req.body
-        if(!blockUniqueId || !villageUniqueId || !villageName) return res.status(400).send({ message: "Please send all required fields" })
+        let { blockUniqueId, talukaUniqueId, villageUniqueId, villageName } = req.body
+        if(!blockUniqueId || !villageUniqueId || !villageName || !talukaUniqueId) return res.status(400).send({ message: "Please send all required fields" })
 
-        let isExistBlock = await zoneModal.find({"_id" :new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId}}});
-        if(!isExistBlock) res.status(400).send({ message: "This block id is not exist, Invalid ID" })
+        let isExistBlock = await zoneModal.findOne({"_id" :new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"taluka.talukaUniqueId":talukaUniqueId}}});
+        if(!isExistBlock) return res.status(400).json({ message: "This taluka id is not exist, Invalid ID" })
 
-        let newVillage = await zoneModal.findOneAndUpdate({"_id" :new mongoose.Types.ObjectId(id), "blocks": { $elemMatch: { "blockUniqueId": blockUniqueId } } },
+        let newVillage = await zoneModal.findOneAndUpdate({"_id" :new mongoose.Types.ObjectId(id), "blocks": { $elemMatch: { "taluka.talukaUniqueId":talukaUniqueId } } },
             {
                 $addToSet: {
-                    "blocks.$.villages": {
+                    "blocks.$.taluka.villages": {
                         $each: [{
                             villageName: villageName,
                             villageUniqueId: villageUniqueId
@@ -66,7 +69,31 @@ export async function addNewVillage(req: Request, res: Response) {
             })
         return res.status(201).send({ message: "Zone created succesfully", success: true, data: newVillage });
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function addNewTaluka(req: Request, res: Response) {
+    try {
+        let { id } = req.params;
+        let { blockUniqueId, talukaName, talukaUniqueId } = req.body
+        if(!blockUniqueId || !talukaName || !talukaUniqueId) return res.status(400).send({ message: "Please send all required fields" })
+
+        let isExistBlock = await zoneModal.find({"_id" :new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId}}});
+        if(!isExistBlock) res.status(400).send({ message: "This block id is not exist, Invalid ID" })
+
+        let newtaluka = await zoneModal.findOneAndUpdate({"_id" :new mongoose.Types.ObjectId(id), "blocks": { $elemMatch: { "blockUniqueId": blockUniqueId } } },
+        { $set: {
+                "blocks.$.taluka": {
+                    talukaName: talukaName,
+                    talukaUniqueId: talukaUniqueId
+                }
+            }
+        })
+        return res.status(201).send({ message: "Taluka created succesfully", success: true, data: newtaluka });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function updateZone(req: Request, res: Response) {
@@ -85,8 +112,8 @@ export async function updateZone(req: Request, res: Response) {
                 {$set : {"blocks.$[e].blockUniqueId.$[f].villageName" : villageName}},
                 {arrayFilters:[{"e.blockUniqueId":blockUniqueId,"f.villageUniqueId":villageUniqueId}]})
     } catch (error) {
-        console.log(error)
-        res.status(500).send();
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function deleteZone(req: Request, res: Response) {
@@ -97,7 +124,8 @@ export async function deleteZone(req: Request, res: Response) {
         await zoneModal.deleteOne({_id : new mongoose.Types.ObjectId(id)})
         return res.status(201).send({mesage : "Deleted successfully", success: true})
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function deleteBlockOrVillage(req: Request, res: Response) {
@@ -117,7 +145,8 @@ export async function deleteBlockOrVillage(req: Request, res: Response) {
         }
         return res.status(201).send({mesage : "Deleted successfully", success: true})
     } catch (error) {
-        res.status(500).send({ message: "Internal Server Error", error: JSON.stringify(error), success: false });
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function getZoneById(req: Request, res: Response) {
@@ -127,7 +156,8 @@ export async function getZoneById(req: Request, res: Response) {
         if(!zone) return res.status(400).send({mesage : "This Id is not exist, Invalid ID"})
         return res.status(201).send({mesage : "fetched successfully", success: true, result : zone})
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function getAllDistrict(req: Request, res: Response) {
@@ -143,7 +173,8 @@ export async function getAllDistrict(req: Request, res: Response) {
         })
         return res.status(201).send({message : "District List", data : distArray})
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function getAllBlocks(req: Request, res: Response) {
@@ -164,7 +195,8 @@ export async function getAllBlocks(req: Request, res: Response) {
             }))
         })
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function getAllVillage(req: Request, res: Response) {
@@ -173,27 +205,28 @@ export async function getAllVillage(req: Request, res: Response) {
         let dist = await zoneModal.find({ _id: new mongoose.Types.ObjectId(distId), "blocks": { $elemMatch: { "blockUniqueId": blockId } } });
         if (!dist) return res.status(201).send({ message: "District Id is not found, Invalid ID" })
         let villageArray = [] as any;
-        dist.map(x => {
-            let distName = x.districtName;
-            x.blocks.map(y => { if (y.blockUniqueId === blockId) { let blockName = y.blockName;console.log(y.villages.map(z => {villageArray.push({
-                            distName: distName as any,
-                            blockName : blockName as any,
-                            villageName: z.villageName as any,
-                            villageUniqueId : z.villageUniqueId as any
-                    })
-            })) }
-            })})
+        // dist.map(x => {
+        //     let distName = x.districtName;
+            // x.blocks.map(y => { if (y.blockUniqueId === blockId) { let blockName = y.blockName;console.log(y.villages.map(z => {villageArray.push({
+            //                 distName: distName as any,
+            //                 blockName : blockName as any,
+            //                 villageName: z.villageName as any,
+            //                 villageUniqueId : z.villageUniqueId as any
+            //         })
+            // })) }
+            // })})
         return res.status(201).send({ message: "list of blocks", data: villageArray })
     } catch (error) {
-        res.status(500).send(error);
-    }
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })    }
 }
 export async function getAllZone(req: Request, res: Response) {
     try {
         let zoneList = await zoneModal.find({})
         return res.status(201).send({mesage : "fetched successfully", success: true, result : zoneList})
     } catch (error) {
-        res.status(500).send(error);
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function getCountOfAllVillage(req: Request, res: Response) {
@@ -202,7 +235,8 @@ export async function getCountOfAllVillage(req: Request, res: Response) {
             }])
         return res.status(201).send({message : "fetched successfully", success: true, result : villageCount})
     } catch (error) {
-        res.status(500).json({error :JSON.stringify(error), success: false});
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
 export async function getCountOfAllBlocks(req: Request, res: Response) {
@@ -210,6 +244,7 @@ export async function getCountOfAllBlocks(req: Request, res: Response) {
         let blockCount = await zoneModal.aggregate([{$match:{"blocks": { $elemMatch: { "$exists": true }}}},{ $count:"totalNumberOfBlock"}])
         return res.status(201).send({mesage : "fetched successfully", success: true, result : blockCount})
     } catch (error) {
-        res.status(500).json({error :JSON.stringify(error), success: false});
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }

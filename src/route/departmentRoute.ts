@@ -1,9 +1,10 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
-import { addNewDepartment,deleteScheme, deleteDepartment, getAllDepartment, getAllDepartmentAndScheme, getDepartmentById, getSchemeByDepartment, updateDepartment } from '../controller/deptController';
+import { addNewDepartment,deleteScheme, deleteDepartment, getAllDepartment, getAllDepartmentAndScheme, getDepartmentById, getSchemeByDepartment, updateDepartment,  uploadExcelData } from '../controller/deptController';
+import { upload } from '../middleware/auth';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
-
 router.post('/adddepartment', addNewDepartment)
+router.post('/uploadexceldata',upload, uploadExcelData)
 router.post('/updatedepartment/:id', updateDepartment)
 router.get('/getalldepartmentandscheme', getAllDepartmentAndScheme)
 router.delete('/deletedepartmentbyid/:id', deleteDepartment)
