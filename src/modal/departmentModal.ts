@@ -12,7 +12,15 @@ const deptSchema = new Schema({
             },
             schemeName: {
                 type: String
-            }
+            },
+            questionnaire : [{
+                question:{
+                    type:String
+                },
+                range :{
+                    type:String
+                }
+            }],
         }
     ],
     IsActive: {

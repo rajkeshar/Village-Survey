@@ -140,3 +140,58 @@ export async function deleteScheme(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function uploadSchemeData(req: Request, res: Response) {
+    try {
+        // read the Excel sheet into a JavaScript object
+        let path = req.body.path;
+        const workbook = xlsx.readFile(path);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = xlsx.utils.sheet_to_json(sheet);
+
+        // loop through the data and update the collection
+        data.forEach((row) => {
+            const deptName = row['deptName'];
+            let exists =  deptModal.findOne({deptName : row.deptName})
+            if(!exists){
+                let payload = {
+                    deptName : row.deptName,
+                    schemeDetails : [
+                        {
+                            schemeId : row.schemeId, 
+                            schemeName : row.schemeName,
+                            'questionnaire':[
+                                {
+                                    question : row.question,
+                                    range : row.range
+                                }
+                            ]
+                        }
+                    ]
+                }
+                let modal = new deptModal(payload)
+                modal.save()
+                    .then(() => {
+                    })
+                    .catch((err) => {
+                        console.error(`Error updating ${deptName}:`, err);
+                    });
+            } else {
+                let payload = {
+                    schemeId : row.schemeId, 
+                    schemeName : row.schemeName
+                }
+                
+                 deptModal.findOneAndUpdate({deptName : row.deptName},{ $addToSet: { "schemeDetails": { $each: [payload]}}},{upsert:true})
+                    .then(() => {
+                    })
+                    .catch((err) => {
+                        console.error(`Error updating ${deptName}:`, err);
+                    });
+            }
+        })
+        res.send({message : "updated"})
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}

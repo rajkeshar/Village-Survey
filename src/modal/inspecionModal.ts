@@ -5,43 +5,41 @@ const surveySchema = new Schema({
         type :String,
         required : true
     },
-    questionnaire : [{
-        question:{
-            type:String,
-            required : true
-        },
-        answer:{
-            type:String,
-            required : true
-        }
-    }],
-    villageName:{
-        type :String,
-        required : true
-    },
-    departmentName:{
-        type :String,
-        required : true
-    },
-    blockName:{
-        type :String,
-        required : true
-    },
-    talukaName:{
+    surveyorName:{
         type :String
     },
-    districtName:{
-        type :String,
-        required : true
+    // questionnaire : [{
+    //     question:{
+    //         type:String,
+    //         required : true
+    //     },
+    //     answer:{
+    //         type:String,
+    //         required : true
+    //     }
+    // }],
+    villageName:{
+        type :Array
     },
+    departmentName:{
+        type :Array
+    },
+    // blockName:{
+    //     type :String,
+    //     required : true
+    // },
+    // talukaName:{
+    //     type :String
+    // },
+    // districtName:{
+    //     type :String,
+    //     required : true
+    // },
     surveyStartDate:{
         type :Date
     },
     surveyEndDate:{
         type :Date
-    },
-    surveyorName:{
-        type :String
     },
     IsOnGoingSurvey:{
         type :String, 
