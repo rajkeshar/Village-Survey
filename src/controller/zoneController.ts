@@ -201,12 +201,24 @@ export async function getAllTaluka(req: Request, res: Response) {
        let { distId } = req.params;
         let talukaList = await zoneModal.findOne({ _id : new mongoose.Types.ObjectId(distId)}) as any
         if(!talukaList) return res.status(201).send({message : "District Id is not found, Invalid ID"})
-        let result = await zoneModal.aggregate([
-            { $unwind: "$blocks" },
-            { $group: { _id: "$blocks.taluka.talukaName" } },
-            { $project: { _id: 0, talukaName: "$_id" } }
-          ])
-         return res.status(201).send({message : "list of taluka", data: result})
+        let talukaArray= []as any;
+        talukaList?.blocks.map((x)=>{
+            let talukaNme = x.taluka?.talukaName as any
+            let talukaUniqueID = x.taluka?.talukaUniqueId as any
+            if( talukaNme && talukaUniqueID) {
+                talukaArray.push({
+                    talukaName :talukaNme,
+                    talukaUniqueId : talukaUniqueID
+                })
+            }
+        })
+        return res.status(201).send({message : "list of taluka", data: talukaArray})
+        // let result = await zoneModal.aggregate([
+        //     { $unwind: "$blocks" },
+        //     { $group: { _id: "$blocks.taluka.talukaName" } },
+        //     { $project: { _id: 0, talukaName: "$_id" } }
+        //   ])
+         
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
