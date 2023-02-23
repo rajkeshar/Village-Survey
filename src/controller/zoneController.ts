@@ -228,7 +228,7 @@ export async function getAllVillage(req: Request, res: Response) {
     try {
         let { distId, blockId } = req.params;
         let dist = await zoneModal.findOne({ _id: new mongoose.Types.ObjectId(distId), "blocks": { $elemMatch: { "blockUniqueId": blockId } } });
-        if (!dist) return res.status(201).send({ message: "District Id is not found, Invalid ID" })
+        if (!dist) return res.status(201).send({ message: "District Id or block Id is not found, Invalid ID" })
         let villageArray = [] as any;
         let result = await zoneModal.aggregate([
             { $unwind: "$blocks" },
