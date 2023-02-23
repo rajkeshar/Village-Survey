@@ -140,10 +140,10 @@ export async function deleteScheme(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
-export async function uploadSchemeData(req: Request, res: Response) {
+export async function uploadSchemeData(req: any, res: Response) {
     try {
         // read the Excel sheet into a JavaScript object
-        let path = req.body.path;
+        let path = req.file.path as any
         const workbook = xlsx.readFile(path);
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const data = xlsx.utils.sheet_to_json(sheet);
