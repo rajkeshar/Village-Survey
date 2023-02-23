@@ -178,7 +178,13 @@ export async function uploadSchemeData(req: Request, res: Response) {
             } else {
                 let payload = {
                     schemeId : row.schemeId, 
-                    schemeName : row.schemeName
+                    schemeName : row.schemeName,
+                    'questionnaire':[
+                        {
+                            question : row.question,
+                            range : row.range
+                        }
+                    ]
                 }
                 
                  deptModal.findOneAndUpdate({deptName : row.deptName},{ $addToSet: { "schemeDetails": { $each: [payload]}}},{upsert:true})
