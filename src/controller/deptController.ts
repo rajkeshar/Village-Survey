@@ -19,7 +19,7 @@ export async function uploadExcelData(req: any, res: any) {
 }
 export async function addNewDepartment(req: Request, res: Response) {
     try {
-        let { deptName, schemeName, schemeId, deptId } = req.body
+        let { deptName, schemeName, schemeId, deptId, question, range } = req.body
         if (!deptName) return res.status(400).send("Kindly send dept Name");
 
         
@@ -40,12 +40,37 @@ export async function addNewDepartment(req: Request, res: Response) {
             // const setQuery = {$set : {'schemeDetails.$[e].schemeName' : schemeName}};
             let payload = {
                 schemeId : schemeId, 
-                schemeName : schemeName
+                schemeName : schemeName,
+                'questionnaire':[
+                    {
+                        question : question,
+                        range : range
+                    }
+                ]
             }
             const setQuery = { $addToSet: { "schemeDetails": { $each: [payload]}}};
             const updatedept = await deptModal.findOneAndUpdate({ _id : new mongoose.Types.ObjectId(deptId)} , setQuery ,{new : true});
             return res.status(201).send({ message: "Succesfully added  scheme",data:updatedept, success: true });
         }
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function updateQuestion(req: Request, res: Response) {
+    let { id } = req.params;
+    try {
+
+        let filter = { _id: new mongoose.Types.ObjectId(id) };
+        let { schemeId, question,questionId, deptName } = req.body;
+
+        let isExist = await deptModal.findById({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
+        if (!isExist) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
+       
+        let result = await deptModal.findOneAndUpdate({ "deptName": deptName, "schemeDetails.schemeId": schemeId, "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionId) },
+  { $set: { "schemeDetails.$[scheme].questionnaire.$[question].question": question } },
+  { arrayFilters: [ { "scheme.schemeId": schemeId }, { "question._id": new mongoose.Types.ObjectId(questionId) } ] })
+        return res.status(201).send({ message: 'Successfully updated', data: result, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
