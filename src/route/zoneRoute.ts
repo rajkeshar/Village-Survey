@@ -1,5 +1,5 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
-import { addNewZone, addNewVillage, deleteZone, getAllBlocks, getAllDistrict, getAllVillage, getZoneById, updateZone, getAllZone, deleteBlockOrVillage, getCountOfAllVillage, getCountOfAllBlocks, addNewTaluka, getAllTaluka, getAllVillageBasedOnTalukId } from '../controller/zoneController';
+import { addNewZone, addNewVillage, deleteZone, getAllBlocks, getAllDistrict, getAllVillage, getZoneById, updateZone, getAllZone, deleteBlockOrVillage, getCountOfAllVillage, getCountOfAllBlocks, addNewTaluka, getAllTaluka, getAllVillageBasedOnTalukId, getBlockById } from '../controller/zoneController';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
 
@@ -18,6 +18,7 @@ router.get('/getalldistrict', getAllDistrict)
 router.get('/getallzone', getAllZone)
 router.get('/getallvillagecount', getCountOfAllVillage)
 router.get('/getallblockcount', getCountOfAllBlocks)
+router.get('/getblockbyid/:id/:blockUniqueId', getBlockById)
 
 
 
