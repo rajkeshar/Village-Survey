@@ -316,3 +316,14 @@ export async function getCountOfAllBlocks(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function getBlockById(req: Request, res: Response) {
+    try {
+        let { id, blockUniqueId } = req.params;
+        let result = await zoneModal.find({_id : new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId }}}, { "blocks.$": 1 })
+        if(!result) return res.status(400).json({message : "Block Id not found, Invalid ID"})
+        return res.status(201).send({mesage : "block fetched successfully", success: true, data : result})
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
