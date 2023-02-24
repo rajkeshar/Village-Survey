@@ -66,8 +66,8 @@ export async function addNewVillage(req: Request, res: Response) {
                         }]
                     }
                 }
-            })
-        return res.status(201).send({ message: "Zone created succesfully", success: true, data: newVillage });
+            },{new:true} )
+        return res.status(201).send({ message: "village created succesfully", success: true, data: newVillage });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
