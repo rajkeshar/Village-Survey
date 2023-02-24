@@ -244,6 +244,46 @@ export async function getAllVillage(req: Request, res: Response) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })    }
 }
+export async function getAllVillageBasedOnTalukId(req: Request, res: Response) {
+    try {
+        let { id, blockUniqueId , talukaUniqueId} = req.params;
+        let dist = await zoneModal.findOne({_id : new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId,"taluka.talukaUniqueId":talukaUniqueId}}});
+        if (!dist) return res.status(201).send({ message: "District Id , block Id or taluka Id are not found, Invalid ID" })
+    
+        let result = await zoneModal.aggregate([
+            {
+              $match: {
+                "blocks.taluka.talukaUniqueId": talukaUniqueId // Replace with the desired talukaUniqueId
+              }
+            },
+            {
+              $unwind: "$blocks"
+            },
+            {
+              $match: {
+                "blocks.taluka.talukaUniqueId": talukaUniqueId // Replace with the desired talukaUniqueId
+              }
+            },
+            {
+              $replaceRoot: {
+                newRoot: "$blocks.taluka"
+              }
+            },
+            {
+              $project: {
+                _id: 0,
+                talukaName: 1,
+                talukaUniqueId: 1,
+                villages: 1
+              }
+            }
+          ])
+          
+        return res.status(201).send({ message: "list of villages", data: result , success: true})
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })    }
+}
 export async function getAllZone(req: Request, res: Response) {
     try {
         let zoneList = await zoneModal.find({})
