@@ -115,3 +115,8 @@ export const upload = multer(
     storage: storage, 
     fileFilter: excelFilter }
 ).single("deptName");
+export const uploadVillage = multer(
+    { 
+    storage: storage, 
+    fileFilter: excelFilter }
+).single("districtName");

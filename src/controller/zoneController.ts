@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express'
 import mongoose from 'mongoose';
 import zoneModal from '../modal/zoneModal'
+import xlsx from 'xlsx';
 
 export async function addNewZone(req: Request, res: Response) {
     try {
@@ -322,6 +323,63 @@ export async function getBlockById(req: Request, res: Response) {
         let result = await zoneModal.find({_id : new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId }}}, { "blocks.$": 1 })
         if(!result) return res.status(400).json({message : "Block Id not found, Invalid ID"})
         return res.status(201).send({mesage : "block fetched successfully", success: true, data : result})
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function uploadZoneData(req: any, res: Response) {
+    try {
+        // read the Excel sheet into a JavaScript object
+        let path = req.file.path as any
+        const workbook = xlsx.readFile(path);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = xlsx.utils.sheet_to_json(sheet);
+
+        // loop through the data and update the collection
+        data.forEach(async (row:any) => {
+            const districtName = row.districtName;
+            const pincode = row.pincode;
+            const blockUniqueId = row.blockUniqueId;
+            const blockName = row.blockName;
+            const talukaUniqueId = row.talukaUniqueId;
+            const talukaName = row.talukaName;
+            const villageUniqueId = row.villageUniqueId;
+            const villageName = row.villageName;
+          
+            const village = { villageName, villageUniqueId };
+            const taluka = { talukaName, talukaUniqueId, villages: [village] };
+            const block = { blockName, blockUniqueId, taluka: taluka };
+            const zone = { districtName, pincode, blocks: [block] };
+          
+            let exists = await zoneModal.findOne({districtName }) as any
+            if(exists) {
+                
+                await zoneModal.findOneAndUpdate({"districtName" : "districtName"},
+                    {
+                        $addToSet: {
+                            "blocks.$.taluka.villages": {
+                                $each: [{
+                                    villageName: row.villageName,
+                                    villageUniqueId: row.villageUniqueId
+                                }]
+                            }
+                        }
+                    },{new:true} )
+            } else {
+                const zoneData = new zoneModal(zone);
+                zoneData.save((err, result) => {
+                  if (err) {
+                    console.log('Error:', err);
+                  } else {
+                    console.log('Result:', result);
+                  }
+                });
+            }
+            
+          
+          });
+        res.send({message : "inserted data"})
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
