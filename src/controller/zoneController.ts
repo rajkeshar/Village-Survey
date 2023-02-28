@@ -335,39 +335,44 @@ export async function uploadZoneData(req: any, res: Response) {
         const workbook = xlsx.readFile(path);
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const data = xlsx.utils.sheet_to_json(sheet);
-
+        let villagearray = [] as any;
+         
         // loop through the data and update the collection
+        let districtName = '';
+            let pincode = '';
+            let blockUniqueId = '';
+            let blockName = '';
+            let talukaUniqueId = '';
+            let talukaName = '';
+            // const villageUniqueId = row.villageUniqueId;
+            // const villageName = row.villageName;
+          
+            // const village = { villageName, villageUniqueId };
+            let taluka = { talukaName, talukaUniqueId, villages: villagearray };
+            let block = { blockName, blockUniqueId, taluka: taluka };
+            let zone = { districtName, pincode, blocks: [block] };
         data.forEach(async (row:any) => {
-            const districtName = row.districtName;
-            const pincode = row.pincode;
-            const blockUniqueId = row.blockUniqueId;
-            const blockName = row.blockName;
-            const talukaUniqueId = row.talukaUniqueId;
-            const talukaName = row.talukaName;
-            const villageUniqueId = row.villageUniqueId;
-            const villageName = row.villageName;
+             villagearray.push({
+                villageName : row.villageName as any,
+                villageUniqueId : row.villageUniqueId as any
+            })
+             districtName = row.districtName;
+             pincode = row.pincode;
+             blockUniqueId = row.blockUniqueId;
+             blockName = row.blockName;
+             talukaUniqueId = row.talukaUniqueId;
+             talukaName = row.talukaName;
+            // const villageUniqueId = row.villageUniqueId;
+            // const villageName = row.villageName;
           
-            const village = { villageName, villageUniqueId };
-            const taluka = { talukaName, talukaUniqueId, villages: [village] };
-            const block = { blockName, blockUniqueId, taluka: taluka };
-            const zone = { districtName, pincode, blocks: [block] };
-          
-            let exists = await zoneModal.findOne({districtName }) as any
-            if(exists) {
-                
-                await zoneModal.findOneAndUpdate({"districtName" : "districtName"},
-                    {
-                        $addToSet: {
-                            "blocks.$.taluka.villages": {
-                                $each: [{
-                                    villageName: row.villageName,
-                                    villageUniqueId: row.villageUniqueId
-                                }]
-                            }
-                        }
-                    },{new:true} )
-            } else {
-                const zoneData = new zoneModal(zone);
+            // const village = { villageName, villageUniqueId };
+             taluka = { talukaName, talukaUniqueId, villages: villagearray };
+             block = { blockName, blockUniqueId, taluka: taluka };
+             zone = { districtName, pincode, blocks: [block] };
+        })
+        let exists = await zoneModal.find({districtName: districtName}) as any
+         if(!exists.length) {
+            const zoneData = new zoneModal(zone);
                 zoneData.save((err, result) => {
                   if (err) {
                     console.log('Error:', err);
@@ -375,10 +380,23 @@ export async function uploadZoneData(req: any, res: Response) {
                     console.log('Result:', result);
                   }
                 });
-            }
+        }
+            // let exists = await zoneModal.find({districtName: districtName}) as any
+            // if(exists.length) {
+                
+            //     await zoneModal.findOneAndUpdate({"_id" : exists._id,"blocks": { $elemMatch: { "taluka.talukaUniqueId":talukaUniqueId } } },
+            //     {
+            //                   $addToSet: {
+            //                       "blocks.$.taluka.villages": {
+            //                           $each:villageArray
+            //                       }
+            //                   }
+            //               },{new:true}) 
+            // if(!exists.length) {
+                
             
+
           
-          });
         res.send({message : "inserted data"})
     } catch (error) {
         console.log(error);
