@@ -227,8 +227,8 @@ export async function getAllTaluka(req: Request, res: Response) {
 }
 export async function getAllVillage(req: Request, res: Response) {
     try {
-        let { distId, blockId } = req.params;
-        let dist = await zoneModal.findOne({ _id: new mongoose.Types.ObjectId(distId), "blocks": { $elemMatch: { "blockUniqueId": blockId } } });
+        
+        let dist = await zoneModal.findOne({ IsActive  : true  });
         if (!dist) return res.status(201).send({ message: "District Id or block Id is not found, Invalid ID" })
         let villageArray = [] as any;
         let result = await zoneModal.aggregate([
@@ -375,9 +375,9 @@ export async function uploadZoneData(req: any, res: Response) {
             const zoneData = new zoneModal(zone);
                 zoneData.save((err, result) => {
                   if (err) {
-                    console.log('Error:', err);
+                    res.send({message : "inserted data",data : err})
                   } else {
-                    console.log('Result:', result);
+                    res.send({message : "inserted data",data : result})
                   }
                 });
         }
@@ -397,7 +397,7 @@ export async function uploadZoneData(req: any, res: Response) {
             
 
           
-        res.send({message : "inserted data"})
+       
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
