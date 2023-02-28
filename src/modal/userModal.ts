@@ -26,7 +26,7 @@ const userSchema = new Schema({
     role:{
         type :String, 
         default: 'user',
-        enum: ["user", "admin", "superadmin","officer", "surveyer"]
+        enum: ["VillageManager", "BlockManager", "supdistrictManager","superadmin"]
     },
     EmpID:{
         type :String,

@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express'
 import mongoose from 'mongoose';
 import zoneModal from '../modal/zoneModal'
+import xlsx from 'xlsx';
 
 export async function addNewZone(req: Request, res: Response) {
     try {
@@ -322,6 +323,81 @@ export async function getBlockById(req: Request, res: Response) {
         let result = await zoneModal.find({_id : new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"blockUniqueId":blockUniqueId }}}, { "blocks.$": 1 })
         if(!result) return res.status(400).json({message : "Block Id not found, Invalid ID"})
         return res.status(201).send({mesage : "block fetched successfully", success: true, data : result})
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function uploadZoneData(req: any, res: Response) {
+    try {
+        // read the Excel sheet into a JavaScript object
+        let path = req.file.path as any
+        const workbook = xlsx.readFile(path);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = xlsx.utils.sheet_to_json(sheet);
+        let villagearray = [] as any;
+         
+        // loop through the data and update the collection
+        let districtName = '';
+            let pincode = '';
+            let blockUniqueId = '';
+            let blockName = '';
+            let talukaUniqueId = '';
+            let talukaName = '';
+            // const villageUniqueId = row.villageUniqueId;
+            // const villageName = row.villageName;
+          
+            // const village = { villageName, villageUniqueId };
+            let taluka = { talukaName, talukaUniqueId, villages: villagearray };
+            let block = { blockName, blockUniqueId, taluka: taluka };
+            let zone = { districtName, pincode, blocks: [block] };
+        data.forEach(async (row:any) => {
+             villagearray.push({
+                villageName : row.villageName as any,
+                villageUniqueId : row.villageUniqueId as any
+            })
+             districtName = row.districtName;
+             pincode = row.pincode;
+             blockUniqueId = row.blockUniqueId;
+             blockName = row.blockName;
+             talukaUniqueId = row.talukaUniqueId;
+             talukaName = row.talukaName;
+            // const villageUniqueId = row.villageUniqueId;
+            // const villageName = row.villageName;
+          
+            // const village = { villageName, villageUniqueId };
+             taluka = { talukaName, talukaUniqueId, villages: villagearray };
+             block = { blockName, blockUniqueId, taluka: taluka };
+             zone = { districtName, pincode, blocks: [block] };
+        })
+        let exists = await zoneModal.find({districtName: districtName}) as any
+         if(!exists.length) {
+            const zoneData = new zoneModal(zone);
+                zoneData.save((err, result) => {
+                  if (err) {
+                    console.log('Error:', err);
+                  } else {
+                    console.log('Result:', result);
+                  }
+                });
+        }
+            // let exists = await zoneModal.find({districtName: districtName}) as any
+            // if(exists.length) {
+                
+            //     await zoneModal.findOneAndUpdate({"_id" : exists._id,"blocks": { $elemMatch: { "taluka.talukaUniqueId":talukaUniqueId } } },
+            //     {
+            //                   $addToSet: {
+            //                       "blocks.$.taluka.villages": {
+            //                           $each:villageArray
+            //                       }
+            //                   }
+            //               },{new:true}) 
+            // if(!exists.length) {
+                
+            
+
+          
+        res.send({message : "inserted data"})
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
