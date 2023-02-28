@@ -121,11 +121,9 @@ export async function deleteDepartment(req: Request, res: Response) {
     }
 }
 export async function getAllDepartment(req: Request, res: Response) {
-    const deptList = await deptModal.find({'IsActive' : true}).lean();
+    const deptList = await deptModal.find({ IsActive: true }, { deptName: 1, _id: 1 })
     try {
-        let deptArray = [] as any; 
-        deptList.map(x =>  {deptArray.push(x.deptName)});
-        res.send({ message: "department list fetched successfully", data: deptArray });
+        res.send({ message: "department list fetched successfully", success: true, data: deptList });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
