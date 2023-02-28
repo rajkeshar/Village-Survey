@@ -91,9 +91,9 @@ export async function getAllSurvey(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
-export async function getAllSurveyDate(req: Request, res: Response) {
+export async function getSurveyDateRange(req: Request, res: Response) {
     try {
-        let surveyList = await surveyModal.find({ IsActive: true }, { surveyStartDate: 1,surveyEndDate:1, _id: 1 });
+        let surveyList = await surveyModal.find({ IsActive: true,IsOnGoingSurvey : "OnGoing" }, { surveyStartDate: 1,surveyEndDate:1, _id: 1 });
         return res.status(201).json({ message: "fetched all successfully", success: true, data: surveyList })
     } catch (error) {
         console.log(error);
