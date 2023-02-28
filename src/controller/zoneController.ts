@@ -375,9 +375,9 @@ export async function uploadZoneData(req: any, res: Response) {
             const zoneData = new zoneModal(zone);
                 zoneData.save((err, result) => {
                   if (err) {
-                    console.log('Error:', err);
+                    res.send({message : "inserted data",data : err})
                   } else {
-                    console.log('Result:', result);
+                    res.send({message : "inserted data",data : result})
                   }
                 });
         }
@@ -397,7 +397,7 @@ export async function uploadZoneData(req: any, res: Response) {
             
 
           
-        res.send({message : "inserted data"})
+       
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
