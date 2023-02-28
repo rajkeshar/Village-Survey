@@ -68,6 +68,20 @@ export async function getSurveyById(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function changeSurveyStatus(req: Request, res: Response) {
+    try {
+        let { id } = req.params;
+        let filter = { _id: new mongoose.Types.ObjectId(id), 'IsActive': true };
+        let existingDoc = await surveyModal.findOne(filter);
+        if (!existingDoc) return res.status(400).json({ message: "This is not exist, Invalid ID" });
+        let setQuery = { $set  : { IsOnGoingSurvey : "OnGoing" } };
+        let result = await surveyModal.findOneAndUpdate( filter , setQuery , { new : true })
+        return res.status(201).json({ message: "status changed successfully", success: true, data: result })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
 export async function getAllSurvey(req: Request, res: Response) {
     try {
         let surveyList = await surveyModal.find({ 'IsActive': true });
