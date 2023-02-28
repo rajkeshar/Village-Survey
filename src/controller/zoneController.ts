@@ -240,7 +240,7 @@ export async function getAllVillage(req: Request, res: Response) {
                 villageName: "$blocks.taluka.villages.villageName",
                 villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
             }}])
-        return res.status(201).send({ message: "list of blocks", data: result })
+        return res.status(201).send({ message: "list of villages", data: result, success : true })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })    }
