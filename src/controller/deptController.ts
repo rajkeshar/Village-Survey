@@ -3,20 +3,20 @@ import mongoose from 'mongoose';
 import deptModal from '../modal/departmentModal'
 import * as xlsx from "xlsx/xlsx";
 
-export async function uploadExcelData(req: any, res: any) {
-    try {
-        let path = req.body.path;
-        const workbook = xlsx.readFile(path);
-        const sheetName = workbook.SheetNames[0];
-        const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-   await deptModal.insertMany(sheetData, function(err, result) {
-    console.log(`${result} documents were inserted`)
-   })
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
-    }
-}
+// export async function uploadExcelData(req: any, res: any) {
+//     try {
+//         let path = req.body.path;
+//         const workbook = xlsx.readFile(path);
+//         const sheetName = workbook.SheetNames[0];
+//         const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+//    await deptModal.insertMany(sheetData, function(err, result) {
+//     console.log(`${result} documents were inserted`)
+//    })
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+//     }
+// }
 export async function addNewDepartment(req: Request, res: Response) {
     try {
         let { deptName, schemeName, schemeId, deptId, question, range } = req.body
@@ -62,15 +62,23 @@ export async function updateQuestion(req: Request, res: Response) {
     try {
 
         let filter = { _id: new mongoose.Types.ObjectId(id) };
-        let { schemeId, question,questionId, deptName } = req.body;
+        let { schemeId, question, questionId, deptName, range } = req.body;
 
         let isExist = await deptModal.findById({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
         if (!isExist) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
-       
-        let result = await deptModal.findOneAndUpdate({ "deptName": deptName, "schemeDetails.schemeId": schemeId, "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionId) },
-  { $set: { "schemeDetails.$[scheme].questionnaire.$[question].question": question } },
-  { arrayFilters: [ { "scheme.schemeId": schemeId }, { "question._id": new mongoose.Types.ObjectId(questionId) } ] })
-        return res.status(201).send({ message: 'Successfully updated', data: result, success: true });
+
+        if (questionId) {
+            let result = await deptModal.findOneAndUpdate({ "deptName": deptName, "schemeDetails.schemeId": schemeId, "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionId) },
+                { $set: { "schemeDetails.$[scheme].questionnaire.$[question].question": question } },
+                { arrayFilters: [{ "scheme.schemeId": schemeId }, { "question._id": new mongoose.Types.ObjectId(questionId) }] })
+            return res.status(201).send({ message: 'Successfully updated question', data: result, success: true });
+        } else {
+            let query = { "deptName": deptName, "schemeDetails.schemeId": schemeId }
+            let setQuery = { $set: { $push: { 'schemeDetails.$.questionnaire': { question: question, range: range } } } };
+            let options = { new: true };
+            let result = deptModal.findOneAndUpdate(query, setQuery, options)
+            return res.status(201).send({ message: 'Successfully added new question', data: result, success: true });
+        };
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -111,9 +119,11 @@ export async function getDepartmentById(req: Request, res: Response) {
 export async function deleteDepartment(req: Request, res: Response) {
     try {
         let { id } = req.params;
-        const dept = await deptModal.findByIdAndDelete(id);
-
-        if (!dept) res.status(404).send({ message: "No item found" });
+        const dept = await deptModal.findOne({_id : new mongoose.Types.ObjectId(id) })
+       
+        if (!dept) return res.status(404).send({ message: "Id is not found, Invalid Id" });
+        await deptModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id) }, 
+        {$set :{ 'IsActive' : false}});
         return res.status(200).send({ message: 'Successfully deleted', success: true });
     } catch (error) {
         console.log(error);
@@ -185,7 +195,7 @@ export async function uploadSchemeData(req: any, res: Response) {
                             'questionnaire':[
                                 {
                                     question : row.question,
-                                    range : row.range
+                                    range : JSON.parse(row.Range)
                                 }
                             ]
                         }
@@ -205,7 +215,7 @@ export async function uploadSchemeData(req: any, res: Response) {
                     'questionnaire':[
                         {
                             question : row.question,
-                            range : row.range
+                            range : JSON.parse(row.Range)
                         }
                     ]
                 }
