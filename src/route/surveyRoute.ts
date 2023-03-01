@@ -1,5 +1,5 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
-import { addNewSurvey, changeSurveyStatus, deleteSurvey, getAllSurvey, getAllSurveyDate, getSurveyById, updateNewSurvey } from '../controller/inspectionController';
+import { addNewSurvey, changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey } from '../controller/inspectionController';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
 
@@ -9,7 +9,7 @@ router.get('/getsurveybyid/:id', getSurveyById)
 router.get('/changesurveystatus/:id', changeSurveyStatus)
 router.get('/getallsurveylist', getAllSurvey)
 router.post('/deletesurey/:id', deleteSurvey)
-router.post('/getsurveydate', getAllSurveyDate)
+router.post('/getsurveydate', getSurveyDateRange)
 
 
 export default router;

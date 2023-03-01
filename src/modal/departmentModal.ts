@@ -17,10 +17,8 @@ const deptSchema = new Schema({
                 question:{
                     type:String
                 },
-                range :{
-                    type:String
-                }
-            }],
+                range :[ Number ]
+            }]
         }
     ],
     IsActive: {
