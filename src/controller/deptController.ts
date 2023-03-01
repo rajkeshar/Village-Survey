@@ -184,7 +184,7 @@ export async function uploadSchemeData(req: any, res: Response) {
         // loop through the data and update the collection
         data.forEach((row) => {
             const deptName = row['deptName'];
-            let exists =  deptModal.findOne({deptName : row.deptName})
+            let exists =  deptModal.findOne({deptName : row.deptName,IsActive : true})
             if(!exists){
                 let payload = {
                     deptName : row.deptName,
