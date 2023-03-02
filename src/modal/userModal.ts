@@ -51,13 +51,17 @@ const userSchema = new Schema({
     CurrentTalukaName:{
         type :String,
     },
-    Departments : {
-        type : Array,
-        ref : 'department'
+    isInspector :{
+        type : Boolean,
+        default : false
     },
     Village : {
         type : Array,
-        ref : 'zone'
+        ref : 'zone',
+    },
+    Departments : {
+            type : Array,
+            ref : 'department'
     },
     otp: { type: String },
     otpExpires: { type: Date },

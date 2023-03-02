@@ -12,6 +12,7 @@ import { sendEmail } from '../utils/email-auth'
 
 import * as dotenv from 'dotenv'
 import mongoose from 'mongoose';
+import zoneModal from '../modal/zoneModal';
 dotenv.config()
 const FAST2SMS = process.env.FAST2SMS;
 let jwtkey = process.env.JWTSECRET_KEY as any
@@ -401,6 +402,110 @@ export async function getUserById(req: Request, res: Response) {
         let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(req.params?.id), IsActive: true });
         if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
         return res.status(200).json({ message: `User fetched successfully.`, data: existUser, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function makeInspectoreProfile(req: Request, res: Response) {
+    try {
+        let { id } = req.params;
+        let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(id), IsActive: true });
+        if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
+        let result = await userModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), IsActive: true },{$set : { isInspector : true}},{new : true});
+        return res.status(200).json({ message: `User updated successfully.`, data: result, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function villageAssignmentForSurveyor(req: Request, res: Response) {
+    try {
+        let { id } = req.params;
+        let villageUniqueIds = req.body.Village;
+
+        let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(req.params?.id), IsActive: true });
+        if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
+        let result = await userModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) }, { $addToSet: { Village: { $each: villageUniqueIds } } },
+            { new: true }
+        ) as any
+        if (!result) {
+            return res.status(400).json({ message: `Department Array is not updated!` });
+        }
+        let deptIds = result.Departments as any;
+
+        for (let villageUniqueId = 0; villageUniqueId < villageUniqueIds.length; villageUniqueId++) {
+            let uniqId = villageUniqueIds[villageUniqueId];
+            let zone = await zoneModal.findOne(
+                { "blocks.taluka.villages": { $elemMatch: { "villageUniqueId": uniqId } } },
+                { "blocks.$": 1 }) as any
+            let blockUniqueId = zone.blocks[0].blockUniqueId;
+            let result = await zoneModal.findOneAndUpdate(
+                { "blocks.taluka.villages.villageUniqueId": uniqId },
+                { $addToSet: { "blocks.$[block].taluka.villages.$[village].departments": { $each: deptIds } } },
+                { arrayFilters: [{ "block.blockUniqueId": blockUniqueId }, { "village.villageUniqueId": uniqId }] })
+        }
+        return res.status(200).json({ message: `village assign successfully.`, data: result, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function departmentAssignmentForSurveyor(req: Request, res: Response) {
+    try {
+        let { id } = req.params;
+        let deptIds = req.body.Departments;
+        if (!id) {
+            return res.status(400).json({ message: `kindly send ID!` });
+        }
+        let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(req.params?.id), IsActive: true });
+        if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
+
+        let userData = await userModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) }, { $addToSet: { Departments: { $each: deptIds } } },
+            { new: true }
+        ) as any
+        //if village are present in the user data Village Array 
+        if (!userData) {
+            return res.status(400).json({ message: `Department Array is not updated!` });
+        }
+        let villageUniqueIds = [] as any;
+        if (userData) {
+            villageUniqueIds.push(userData.Village)
+        }
+        for (let villageUniqueId = 0; villageUniqueId < userData.Village.length; villageUniqueId++) {
+            let uniqId = userData.Village[villageUniqueId];
+            let zone = await zoneModal.findOne(
+                { "blocks.taluka.villages": { $elemMatch: { "villageUniqueId": uniqId } } },
+                { "blocks.$": 1 }) as any
+            let blockUniqueId = zone.blocks[0].blockUniqueId;
+            let result = await zoneModal.findOneAndUpdate(
+                { "blocks.taluka.villages.villageUniqueId": uniqId },
+                { $addToSet: { "blocks.$[block].taluka.villages.$[village].departments": { $each: deptIds } } },
+                { arrayFilters: [{ "block.blockUniqueId": blockUniqueId }, { "village.villageUniqueId": uniqId }] })
+            // await zoneModal.findOneAndUpdate({"blocks.taluka.villages.villageUniqueId" : villageUniqueId },
+            // { $addToSet: { "departments": { $each: deptIds } } })
+        }
+        return res.status(200).json({ message: `dept assign successfully.`, data: userData, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function checkVillageArray(req: Request, res: Response) {
+    try {
+          let existUser = await userModal.distinct("Village", {"userStatus" : "active","IsActive" : true})
+        let totalCountFromUserCollection = await userModal.aggregate([
+            { $match: { "userStatus": "active", "IsActive": true } },
+            { $unwind: "$Village" },
+            { $group: { _id: null, villages: { $addToSet: "$Village" } } },
+            { $project: { count: { $size: "$villages" }, _id: 0 } }
+          ]) as any
+        let totalVillage = await zoneModal.find({"userStatus" : "active","IsActive" : true}).count() as any
+        if(totalCountFromUserCollection != totalVillage) {
+            return res.status(400).json({ message: `Some Villages is left , Do you still wanna continue`});
+        }
+       
+        return res.status(200).json({ message: `dept assign successfully.`, data: totalCountFromUserCollection, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })

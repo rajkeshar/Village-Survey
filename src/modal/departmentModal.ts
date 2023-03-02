@@ -17,7 +17,7 @@ const deptSchema = new Schema({
                 question:{
                     type:String
                 },
-                range :[ Number ]
+                range :[ String ]
             }]
         }
     ],
