@@ -75,6 +75,7 @@ export async function changeSurveyStatus(req: Request, res: Response) {
         let existingDoc = await surveyModal.findOne(filter);
         if (!existingDoc) return res.status(400).json({ message: "This is not exist, Invalid ID" });
         let setQuery = { $set  : { IsOnGoingSurvey : "OnGoing" } };
+        await surveyModal.updateMany( {} , {$set :{ IsOnGoingSurvey : "pending" }} , { new : true })
         let result = await surveyModal.findOneAndUpdate( filter , setQuery , { new : true })
         return res.status(201).json({ message: "status changed successfully", success: true, data: result })
     } catch (error) {
@@ -93,7 +94,7 @@ export async function getAllSurvey(req: Request, res: Response) {
 }
 export async function getSurveyDateRange(req: Request, res: Response) {
     try {
-        let surveyList = await surveyModal.find({ IsActive: true,IsOnGoingSurvey : "OnGoing" }, { surveyStartDate: 1,surveyEndDate:1, _id: 1 });
+        let surveyList = await surveyModal.findOne({ IsActive: true,IsOnGoingSurvey : "OnGoing" }, { surveyStartDate: 1,surveyEndDate:1, _id: 1 });
         return res.status(201).json({ message: "fetched  successfully", success: true, data: surveyList })
     } catch (error) {
         console.log(error);
