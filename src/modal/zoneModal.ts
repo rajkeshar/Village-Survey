@@ -8,6 +8,9 @@ const villageSchema = new Schema({
         type :String,
         required : true
     },
+    departments:{
+        type :Array //update dept value when superadmin add deprtment under village
+    },
 })
 const blockSchema = new Schema({
     blockName:{
