@@ -160,6 +160,21 @@ export async function getSchemeByDepartment(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function getQuestionnaireByDepartment(req: Request, res: Response) {
+    let { schemeId, questionnaireId} = req.body;
+    try {
+        if(!schemeId || !questionnaireId) return res.status(400).send({ message: "send schemeId and questionnaireId"});
+        let questionDetails = await deptModal.findOne({ 
+            "schemeDetails.schemeId": schemeId, 
+            "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionnaireId) 
+        }, { "schemeDetails.questionnaire.$": 1 })
+        if(!questionDetails) return res.status(400).send({ message: "Id not found,Invalid Id"});
+        return res.status(201).send({ message: "question list fetched successfully", data: questionDetails });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
 export async function deleteScheme(req: Request, res: Response) {
     let { id,schemename } = req.params;
     try {
