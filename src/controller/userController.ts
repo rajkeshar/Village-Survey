@@ -426,25 +426,27 @@ export async function villageAssignmentForSurveyor(req: Request, res: Response) 
 
         let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(req.params?.id), IsActive: true });
         if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
-        let result = await userModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) }, { $addToSet: { Village: { $each: villageUniqueIds } } },
+        let result = await userModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) }, { $addToSet: {"AssignVillage.villages": { $each: villageUniqueIds } } },
             { new: true }
         ) as any
+        await userModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), IsActive: true }, 
+        { $set: {"AssignVillage.userId":new mongoose.Types.ObjectId(id) }}, { new: true })
         if (!result) {
             return res.status(400).json({ message: `Department Array is not updated!` });
         }
-        let deptIds = result.Departments as any;
+        // let deptIds = result.Departments as any;
 
-        for (let villageUniqueId = 0; villageUniqueId < villageUniqueIds.length; villageUniqueId++) {
-            let uniqId = villageUniqueIds[villageUniqueId];
-            let zone = await zoneModal.findOne(
-                { "blocks.taluka.villages": { $elemMatch: { "villageUniqueId": uniqId } } },
-                { "blocks.$": 1 }) as any
-            let blockUniqueId = zone.blocks[0].blockUniqueId;
-            let result = await zoneModal.findOneAndUpdate(
-                { "blocks.taluka.villages.villageUniqueId": uniqId },
-                { $addToSet: { "blocks.$[block].taluka.villages.$[village].departments": { $each: deptIds } } },
-                { arrayFilters: [{ "block.blockUniqueId": blockUniqueId }, { "village.villageUniqueId": uniqId }] })
-        }
+        // for (let villageUniqueId = 0; villageUniqueId < villageUniqueIds.length; villageUniqueId++) {
+        //     let uniqId = villageUniqueIds[villageUniqueId];
+        //     let zone = await zoneModal.findOne(
+        //         { "blocks.taluka.villages": { $elemMatch: { "villageUniqueId": uniqId } } },
+        //         { "blocks.$": 1 }) as any
+        //     let blockUniqueId = zone.blocks[0].blockUniqueId;
+        //     let result = await zoneModal.findOneAndUpdate(
+        //         { "blocks.taluka.villages.villageUniqueId": uniqId },
+        //         { $addToSet: { "blocks.$[block].taluka.villages.$[village].departments": { $each: deptIds } } },
+        //         { arrayFilters: [{ "block.blockUniqueId": blockUniqueId }, { "village.villageUniqueId": uniqId }] })
+        // }
         return res.status(200).json({ message: `village assign successfully.`, data: result, success: true });
     } catch (error) {
         console.log(error);
@@ -454,16 +456,20 @@ export async function villageAssignmentForSurveyor(req: Request, res: Response) 
 export async function departmentAssignmentForSurveyor(req: Request, res: Response) {
     try {
         let { id } = req.params;
+        let ID = new mongoose.Types.ObjectId(id);
         let deptIds = req.body.Departments;
         if (!id) {
             return res.status(400).json({ message: `kindly send ID!` });
         }
-        let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(req.params?.id), IsActive: true });
+        let existUser = await userModal.findOne({ _id: ID, IsActive: true });
         if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
 
-        let userData = await userModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) }, { $addToSet: { Departments: { $each: deptIds } } },
+        let userData = await userModal.findOneAndUpdate({ _id: ID }, 
+         { $addToSet: { "AssignDepartments.departments": { $each: deptIds } } },
             { new: true }
         ) as any
+        await userModal.findOneAndUpdate({ _id: ID }, 
+         { $set: { "AssignDepartments.userId": ID } }, { new: true })
         //if village are present in the user data Village Array 
         if (!userData) {
             return res.status(400).json({ message: `Department Array is not updated!` });
@@ -472,19 +478,19 @@ export async function departmentAssignmentForSurveyor(req: Request, res: Respons
         if (userData) {
             villageUniqueIds.push(userData.Village)
         }
-        for (let villageUniqueId = 0; villageUniqueId < userData.Village.length; villageUniqueId++) {
-            let uniqId = userData.Village[villageUniqueId];
-            let zone = await zoneModal.findOne(
-                { "blocks.taluka.villages": { $elemMatch: { "villageUniqueId": uniqId } } },
-                { "blocks.$": 1 }) as any
-            let blockUniqueId = zone.blocks[0].blockUniqueId;
-            let result = await zoneModal.findOneAndUpdate(
-                { "blocks.taluka.villages.villageUniqueId": uniqId },
-                { $addToSet: { "blocks.$[block].taluka.villages.$[village].departments": { $each: deptIds } } },
-                { arrayFilters: [{ "block.blockUniqueId": blockUniqueId }, { "village.villageUniqueId": uniqId }] })
-            // await zoneModal.findOneAndUpdate({"blocks.taluka.villages.villageUniqueId" : villageUniqueId },
-            // { $addToSet: { "departments": { $each: deptIds } } })
-        }
+        // for (let villageUniqueId = 0; villageUniqueId < userData.Village.length; villageUniqueId++) {
+        //     let uniqId = userData.Village[villageUniqueId];
+        //     let zone = await zoneModal.findOne(
+        //         { "blocks.taluka.villages": { $elemMatch: { "villageUniqueId": uniqId } } },
+        //         { "blocks.$": 1 }) as any
+        //     let blockUniqueId = zone.blocks[0].blockUniqueId;
+        //     let result = await zoneModal.findOneAndUpdate(
+        //         { "blocks.taluka.villages.villageUniqueId": uniqId },
+        //         { $addToSet: { "blocks.$[block].taluka.villages.$[village].departments": { $each: deptIds } } },
+        //         { arrayFilters: [{ "block.blockUniqueId": blockUniqueId }, { "village.villageUniqueId": uniqId }] })
+        //     // await zoneModal.findOneAndUpdate({"blocks.taluka.villages.villageUniqueId" : villageUniqueId },
+        //     // { $addToSet: { "departments": { $each: deptIds } } })
+        // }
         return res.status(200).json({ message: `dept assign successfully.`, data: userData, success: true });
     } catch (error) {
         console.log(error);
@@ -506,6 +512,57 @@ export async function checkVillageArray(req: Request, res: Response) {
         }
        
         return res.status(200).json({ message: `dept assign successfully.`, data: totalCountFromUserCollection, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function checkDuplicateDeparmentAssignInVillage(req: Request, res: Response) {
+    try {
+        const deptVillageMap = {};
+        let villageUniqueIdArray = await userModal.aggregate([
+            { $unwind: "$AssignVillage.villages" }, { $group: {
+                  _id: null,
+                  villages: { $addToSet: "$AssignVillage.villages" }
+                } },
+              { $project: {
+                  _id: 0,
+                  villages: 1
+                } }
+            ]) as any
+        let zoneVillageUniqueArray = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka.villages" },
+            { $project: {
+                _id: 1,
+                districtName : 1,
+                villageName: "$blocks.taluka.villages.villageName",
+                villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
+            }}]) as any
+
+            const uniqueVillage = zoneVillageUniqueArray.filter(value => !villageUniqueIdArray.includes(value));
+            if(uniqueVillage) return res.status(201).json({ message: `Some Village is not assigned to surveyor`});
+            
+        (await userModal.find({'isInspector' : true , 'IsActive' : true})).forEach(user => {
+            const userId = user._id.toString();
+            if(!user.AssignVillage || !user.AssignDepartments) return res.status(201).send({message : 'Some Surveyor has no village or departments for surveying'})
+            const village = user.AssignVillage.villages[0];
+            const departments = user.AssignDepartments.departments;
+    
+            for (let i = 0; i < departments.length; i++) {
+                const dept = departments[i].toString();
+                if (dept in deptVillageMap) {
+                    if (deptVillageMap[dept].includes(village)) {
+                        console.log(`User ${userId} has department ${dept} assigned to village ${village} which is the same as another user.`);
+                    } else {
+                        deptVillageMap[dept].push(village);
+                    }
+                } else {
+                    deptVillageMap[dept] = [village];
+                }
+            }
+        });
+        return res.status(200).json({ message: `dept assign successfully.`,  success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })

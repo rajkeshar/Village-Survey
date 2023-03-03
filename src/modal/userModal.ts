@@ -26,7 +26,7 @@ const userSchema = new Schema({
     role:{
         type :String, 
         default: 'user',
-        enum: ["VillageManager", "BlockManager", "supdistrictManager","superadmin"]
+        enum: ["admin","VillageManager", "BlockManager", "supdistrictManager","superadmin"]
     },
     EmpID:{
         type :String,
@@ -55,13 +55,22 @@ const userSchema = new Schema({
         type : Boolean,
         default : false
     },
-    Village : {
+    AssignVillage : {
+        userId:{
+            type : mongoose.Schema.Types.ObjectId,
+        },
+        villages:{
         type : Array,
         ref : 'zone',
+        }
     },
-    Departments : {
-            type : Array,
-            ref : 'department'
+    AssignDepartments : {
+        userId:{
+            type : mongoose.Schema.Types.ObjectId,
+        },
+        departments :[{
+            type : mongoose.Schema.Types.ObjectId,
+        }]
     },
     otp: { type: String },
     otpExpires: { type: Date },
