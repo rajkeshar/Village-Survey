@@ -243,23 +243,16 @@ export async function verifyOTP(req: Request, res: Response) {
 }
 export async function deleteUser(req: Request, res: Response) {
     try {
-        let { contactNumber, id } = req.params;
-
-        const update = { IsActive: false };
-        let existUser = await userModal.find({ _id: new mongoose.Types.ObjectId(req.params?.id), IsActive: true });
-
-        if (!existUser.length) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
-        if (contactNumber) {
-            contactNumber = "+91" + contactNumber;
-            const filter = { contactNumber: contactNumber };
-            let result = await userModal.findOneAndUpdate(filter, update, { new: true })
-            res.status(200).json({ message: `User deleted successfully.` })
-        } else {
-            const filter = { _id: new mongoose.Types.ObjectId(req.params?.id) };
-
-            let result = await userModal.findOneAndUpdate(filter, update, { new: true })
-            res.status(200).json({ message: `User deleted successfully.` })
+        let { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ message: `ID required for delete!` });
         }
+        const update = { IsActive: false };
+        let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(id), IsActive: true });
+        if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
+        const filter = { _id: new mongoose.Types.ObjectId(id) };
+        await userModal.findOneAndUpdate(filter, update)
+        res.status(200).json({ message: `User deleted successfully.` })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })

@@ -333,6 +333,24 @@ export async function getBlockById(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function isVillageDisbaleTrue(req: Request, res: Response) {
+    try {
+        let { id } = req.params;
+        let { blockUniqueId, talukaUniqueId, villageUniqueId } = req.body
+        if(!blockUniqueId || !villageUniqueId || !talukaUniqueId) return res.status(400).send({ message: "Please send all required fields" })
+
+        let isExistBlock = await zoneModal.findOne({"_id" :new mongoose.Types.ObjectId(id),"blocks" :{$elemMatch:{"taluka.talukaUniqueId":talukaUniqueId}}});
+        if(!isExistBlock) return res.status(400).json({ message: "This taluka id is not exist, Invalid ID" })
+
+        let isdisableTrue = await zoneModal.findOneAndUpdate({"blocks.blockUniqueId":blockUniqueId, "blocks.taluka.talukaUniqueId": talukaUniqueId,"blocks.taluka.villages.villageUniqueId": villageUniqueId },
+                { $set: { "blocks.$[b].taluka.villages.$[v].isDisable": true } },
+                { arrayFilters: [{ "b.blockUniqueId": blockUniqueId }, { "v.villageUniqueId": villageUniqueId }]})
+        return res.status(201).send({ message: "succesfully disabled", success: true, data: isdisableTrue });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
 export async function uploadZoneData(req: any, res: Response) {
     try {
         // read the Excel sheet into a JavaScript object
