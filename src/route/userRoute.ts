@@ -1,6 +1,6 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
 import {checkRole} from '../utils/user-auth'
-import { getUserById,deleteUser, forgetPassword,departmentAssignmentForSurveyor, logIn,getAllUser, loginSuperAdmin, signUp, superAdminRegister, updateUser,  verifyOTP, makeInspectoreProfile, villageAssignmentForSurveyor} from '../controller/userController';
+import { getUserById,deleteUser, forgetPassword,departmentAssignmentForSurveyor, logIn,getAllUser, loginSuperAdmin, signUp, superAdminRegister, updateUser,  verifyOTP, makeInspectoreProfile, villageAssignmentForSurveyor, checkDuplicateDeparmentAssignInVillage} from '../controller/userController';
 import { authenticateToken } from '../middleware/auth';
 const router = express.Router();
 
@@ -23,6 +23,7 @@ router.get('/getalluser',  getAllUser)
 router.post('/villageassignmentofsurveyor/:id',  villageAssignmentForSurveyor)
 router.post('/deptassignmentofsurveyor/:id',  departmentAssignmentForSurveyor)
 router.post('/makeinspectoretouser/:id',  makeInspectoreProfile)
+router.post('/checkmatrix',  checkDuplicateDeparmentAssignInVillage)
 
 
 export default router;
