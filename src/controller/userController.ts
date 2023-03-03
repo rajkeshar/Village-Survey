@@ -517,3 +517,54 @@ export async function checkVillageArray(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function checkDuplicateDeparmentAssignInVillage(req: Request, res: Response) {
+    try {
+        const deptVillageMap = {};
+        let villageUniqueIdArray = await userModal.aggregate([
+            { $unwind: "$AssignVillage.villages" }, { $group: {
+                  _id: null,
+                  villages: { $addToSet: "$AssignVillage.villages" }
+                } },
+              { $project: {
+                  _id: 0,
+                  villages: 1
+                } }
+            ]) as any
+        let zoneVillageUniqueArray = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka.villages" },
+            { $project: {
+                _id: 1,
+                districtName : 1,
+                villageName: "$blocks.taluka.villages.villageName",
+                villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
+            }}]) as any
+
+            const uniqueVillage = zoneVillageUniqueArray.filter(value => !villageUniqueIdArray.includes(value));
+            if(uniqueVillage) return res.status(201).json({ message: `Some Village is not assigned to surveyor`});
+            
+        (await userModal.find({'isInspector' : true , 'IsActive' : true})).forEach(user => {
+            const userId = user._id.toString();
+            if(!user.AssignVillage || !user.AssignDepartments) return res.status(201).send({message : 'Some Surveyor has no village or departments for surveying'})
+            const village = user.AssignVillage.villages[0];
+            const departments = user.AssignDepartments.departments;
+    
+            for (let i = 0; i < departments.length; i++) {
+                const dept = departments[i].toString();
+                if (dept in deptVillageMap) {
+                    if (deptVillageMap[dept].includes(village)) {
+                        console.log(`User ${userId} has department ${dept} assigned to village ${village} which is the same as another user.`);
+                    } else {
+                        deptVillageMap[dept].push(village);
+                    }
+                } else {
+                    deptVillageMap[dept] = [village];
+                }
+            }
+        });
+        return res.status(200).json({ message: `dept assign successfully.`,  success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}

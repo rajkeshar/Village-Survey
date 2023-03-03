@@ -74,7 +74,7 @@ export async function updateQuestion(req: Request, res: Response) {
             return res.status(201).send({ message: 'Successfully updated question', data: result, success: true });
         } else {
             let query = { _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId }
-            let setQuery = { $set: { $push: { 'schemeDetails.$.questionnaire': { question: question, range: range } } } };
+            let setQuery =  { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, range: range } } }
             let options = { new: true };
             let result = deptModal.findOneAndUpdate(query, setQuery, options)
             return res.status(201).send({ message: 'Successfully added new question', data: result, success: true });
