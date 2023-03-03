@@ -73,10 +73,11 @@ export async function updateQuestion(req: Request, res: Response) {
                 { arrayFilters: [{ "scheme.schemeId": schemeId }, { "question._id": new mongoose.Types.ObjectId(questionId) }] })
             return res.status(201).send({ message: 'Successfully updated question', data: result, success: true });
         } else {
-            let query = { _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId }
-            let setQuery =  { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, range: range } } }
-            let options = { new: true };
-            let result = deptModal.findOneAndUpdate(query, setQuery, options)
+            // let query = { _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId }
+            // let setQuery =  { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, range: range } } }
+            // let options = { new: true };
+            let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId }, 
+            { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, range: range } } }, {new : true})
             return res.status(201).send({ message: 'Successfully added new question', data: result, success: true });
         };
     } catch (error) {
