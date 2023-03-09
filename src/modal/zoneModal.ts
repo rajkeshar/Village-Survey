@@ -8,9 +8,10 @@ const villageSchema = new Schema({
         type :String,
         required : true
     },
-    departments:{
-        type :Array //update dept value when superadmin add deprtment under village
-    },
+    isDisable :{
+        type: Boolean,
+        default : false
+    }
 })
 const blockSchema = new Schema({
     blockName:{
