@@ -250,6 +250,21 @@ export async function getAllVillage(req: Request, res: Response) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })    }
 }
+export async function getAllTalukaList(req: Request, res: Response) {
+    try {
+        let result = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka" },
+            { $project: {
+                _id: 1,
+                pincode : 1,
+                taluka: "$blocks.taluka"
+            }}])
+        return res.status(201).send({ message: "list of taluka", data: result, success : true })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })    }
+}
 export async function getAllVillageBasedOnTalukId(req: Request, res: Response) {
     try {
         let { id, blockUniqueId , talukaUniqueId} = req.params;
