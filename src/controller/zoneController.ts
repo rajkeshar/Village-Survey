@@ -359,68 +359,80 @@ export async function uploadZoneData(req: any, res: Response) {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const data = xlsx.utils.sheet_to_json(sheet);
         let villagearray = [] as any;
-         
-        // loop through the data and update the collection
-        let districtName = '';
-            let pincode = '';
-            let blockUniqueId = '';
-            let blockName = '';
-            let talukaUniqueId = '';
-            let talukaName = '';
-            // const villageUniqueId = row.villageUniqueId;
-            // const villageName = row.villageName;
-          
-            // const village = { villageName, villageUniqueId };
-            let taluka = { talukaName, talukaUniqueId, villages: villagearray };
-            let block = { blockName, blockUniqueId, taluka: taluka };
-            let zone = { districtName, pincode, blocks: [block] };
-        data.forEach(async (row:any) => {
-             villagearray.push({
-                villageName : row.villageName as any,
-                villageUniqueId : row.villageUniqueId as any
-            })
-             districtName = row.districtName;
-             pincode = row.pincode;
-             blockUniqueId = row.blockUniqueId;
-             blockName = row.blockName;
-             talukaUniqueId = row.talukaUniqueId;
-             talukaName = row.talukaName;
-            // const villageUniqueId = row.villageUniqueId;
-            // const villageName = row.villageName;
-          
-            // const village = { villageName, villageUniqueId };
-             taluka = { talukaName, talukaUniqueId, villages: villagearray };
-             block = { blockName, blockUniqueId, taluka: taluka };
-             zone = { districtName, pincode, blocks: [block] };
-        })
-        let exists = await zoneModal.find({districtName: districtName}) as any
-         if(!exists.length) {
-            const zoneData = new zoneModal(zone);
-                zoneData.save((err, result) => {
-                  if (err) {
-                    res.send({message : "inserted data",data : err})
-                  } else {
-                    res.send({message : "inserted data",data : result})
-                  }
-                });
-        }
-            // let exists = await zoneModal.find({districtName: districtName}) as any
-            // if(exists.length) {
-                
-            //     await zoneModal.findOneAndUpdate({"_id" : exists._id,"blocks": { $elemMatch: { "taluka.talukaUniqueId":talukaUniqueId } } },
-            //     {
-            //                   $addToSet: {
-            //                       "blocks.$.taluka.villages": {
-            //                           $each:villageArray
-            //                       }
-            //                   }
-            //               },{new:true}) 
-            // if(!exists.length) {
-                
-            
 
-          
-       
+        let districtName = '';
+        let pincode = '';
+        let blockUniqueId = '';
+        let blockName = '';
+        let talukaUniqueId = '';
+        let talukaName = '';
+        // const villageUniqueId = row.villageUniqueId;
+        // const villageName = row.villageName;
+
+        // const village = { villageName, villageUniqueId };
+        let taluka = { talukaName, talukaUniqueId, villages: villagearray };
+        let block = { blockName, blockUniqueId, taluka: taluka };
+        let zone = { districtName, pincode, blocks: [block] };
+        data.forEach(async (row: any) => {
+            villagearray.push({
+                villageName: row.villageName as any,
+                villageUniqueId: row.villageUniqueId as any
+            })
+            districtName = row.districtName;
+            pincode = row.pincode;
+            blockUniqueId = row.blockUniqueId;
+            blockName = row.blockName;
+            talukaUniqueId = row.talukaUniqueId;
+            talukaName = row.talukaName;
+            
+            taluka = { talukaName, talukaUniqueId, villages: villagearray };
+            block = { blockName, blockUniqueId, taluka: taluka };
+            zone = { districtName, pincode, blocks: [block] };
+        })
+        let exists = await zoneModal.findOne({ districtName: districtName }) as any
+        if (!exists) {
+            const zoneData = new zoneModal(zone);
+            zoneData.save((err, result) => {
+                if (err) {
+                    res.send({ message: "SOMETHING WENT WRONG", data: err })
+                } else {
+                    res.send({ message: "inserted data", data: result })
+                }
+            });
+        } else {
+            let blockExist = await zoneModal.findOne({ districtName: districtName, "blocks": { $elemMatch: { "blockUniqueId": blockUniqueId } } }) as any
+            if (blockExist) return res.status(400).send({ message: " this block already exist" })
+            let payload = {
+                blockName: blockName,
+                blockUniqueId: blockUniqueId,
+                taluka: {
+                    talukaName: talukaName,
+                    talukaUniqueId: talukaUniqueId,
+                    villages: villagearray
+                }
+
+            }
+            const setQuery = { $addToSet: { "blocks": { $each: [payload] } } };
+            let updateData = await zoneModal.findOneAndUpdate({ pincode: pincode }, setQuery, { new: true });
+            res.send({ message: "inserted data", data: updateData })
+        }
+        // let exists = await zoneModal.find({districtName: districtName}) as any
+        // if(exists.length) {
+
+        //     await zoneModal.findOneAndUpdate({"_id" : exists._id,"blocks": { $elemMatch: { "taluka.talukaUniqueId":talukaUniqueId } } },
+        //     {
+        //                   $addToSet: {
+        //                       "blocks.$.taluka.villages": {
+        //                           $each:villageArray
+        //                       }
+        //                   }
+        //               },{new:true}) 
+        // if(!exists.length) {
+
+
+
+
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
