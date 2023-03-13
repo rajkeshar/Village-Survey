@@ -218,11 +218,12 @@ export async function uploadSchemeData(req: any, res: Response) {
                     ]
                 }
                 let modal = new deptModal(payload)
-                modal.save()
+               await  modal.save()
                     .then(() => {
+                       return  res.status(201).send({message : `dept Inserted:`,data: modal, success: true});
                     })
                     .catch((err) => {
-                        console.error(`Error updating ${deptName}:`, err);
+                        return  res.status(201).send({message : `Error updating ${deptName}:`, data: err});
                     });
             } else {
                 let payload = {
@@ -236,15 +237,15 @@ export async function uploadSchemeData(req: any, res: Response) {
                     ]
                 }
                 
-                 deptModal.findOneAndUpdate({deptName : row.deptName},{ $addToSet: { "schemeDetails": { $each: [payload]}}},{upsert:true})
+                let uodate = await deptModal.findOneAndUpdate({deptName : row.deptName},{ $addToSet: { "schemeDetails": { $each: [payload]}}},{upsert:true})
                     .then(() => {
+                        return  res.status(201).send({message : `dept updated:`,data: uodate, success: true});
                     })
                     .catch((err) => {
                         console.error(`Error updating ${deptName}:`, err);
                     });
             }
         })
-        res.send({message : "updated"})
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
