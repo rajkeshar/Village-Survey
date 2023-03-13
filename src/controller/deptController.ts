@@ -198,9 +198,9 @@ export async function uploadSchemeData(req: any, res: Response) {
         const data = xlsx.utils.sheet_to_json(sheet);
 
         // loop through the data and update the collection
-        data.forEach((row) => {
+        data.forEach(async (row) => {
             const deptName = row['deptName'];
-            let exists =  deptModal.findOne({deptName : row.deptName,IsActive : true})
+            let exists =  await deptModal.findOne({deptName : row.deptName,IsActive : true})
             if(!exists){
                 let payload = {
                     deptName : row.deptName,
