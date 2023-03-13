@@ -8,33 +8,12 @@ const surveySchema = new Schema({
     surveyorName:{
         type :String
     },
-    // questionnaire : [{
-    //     question:{
-    //         type:String,
-    //         required : true
-    //     },
-    //     answer:{
-    //         type:String,
-    //         required : true
-    //     }
-    // }],
     villageName:{
         type :Array
     },
     departmentName:{
         type :Array
     },
-    // blockName:{
-    //     type :String,
-    //     required : true
-    // },
-    // talukaName:{
-    //     type :String
-    // },
-    // districtName:{
-    //     type :String,
-    //     required : true
-    // },
     surveyStartDate:{
         type :Date
     },
