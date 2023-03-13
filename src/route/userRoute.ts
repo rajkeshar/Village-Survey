@@ -13,7 +13,7 @@ router.post('/login',logIn);
 // router.post('/register-user', (req:any,res:Response,next:NextFunction)=>{ checkRole(req,res,next,['superadmin'])},superAdminRegister)
 router.post('/register-user', signUp)
 
-router.post('/resetpassword', forgetPassword)
+router.post('/sendotp', forgetPassword)
 router.post('/resetpassword/verifyotp', verifyOTP)
 
 router.delete('/deleteuser/:id', deleteUser)
