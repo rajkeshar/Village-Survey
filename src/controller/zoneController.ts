@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express'
 import mongoose from 'mongoose';
 import zoneModal from '../modal/zoneModal'
 import xlsx from 'xlsx';
+import userModal from '../modal/userModal';
 
 export async function addNewZone(req: Request, res: Response) {
     try {
@@ -448,6 +449,28 @@ export async function uploadZoneData(req: any, res: Response) {
 
 
 
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function getRemainingVillageFromAssignment(req: any, res: Response) {
+    try {
+        let totalNoOfVillage = await zoneModal.aggregate([
+            { $match: { "blocks.taluka.villages.isDisable": false } },
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka.villages" },
+            { $count: "totalVillages" }
+        ])
+        let assignedVillages = await userModal.aggregate([
+            { $match: { "userStatus": "active", "IsActive": true } },
+            { $unwind: "$Village" },
+            { $group: { _id: null, villages: { $addToSet: "$Village" } } },
+            { $project: { count: { $size: "$villages" }, _id: 0 } }
+        ]) as any
+        let remainingVillage = (totalNoOfVillage[0]?.totalVillages - assignedVillages[0]?.count);
+
+        return res.status(200).json({ message: `remaining villages.`, data: remainingVillage, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
