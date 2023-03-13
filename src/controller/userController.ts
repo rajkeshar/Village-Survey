@@ -229,8 +229,8 @@ export async function verifyOTP(req: Request, res: Response) {
                 if (err) {
                     res.status(500).send({ message: err });
                 } else {
-                    bcrypt.hash(confirmPassword, 10, (err, encrypted) => {
-                        userModal.findOneAndUpdate(userId, {
+                    bcrypt.hash(confirmPassword, 10,async (err, encrypted) => {
+                        await userModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(userId)}, {
                             password: encrypted
                         })
                     })

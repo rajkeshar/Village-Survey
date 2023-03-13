@@ -196,56 +196,49 @@ export async function uploadSchemeData(req: any, res: Response) {
         const workbook = xlsx.readFile(path);
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const data = xlsx.utils.sheet_to_json(sheet);
-
+        let schemeArray = [] as any;
+        let questionArray = [] as any;
+        let deptName ='';
+        let schemeId ='';
+        let schemeName ='';
+        let question ='';
+        let range ='';
         // loop through the data and update the collection
         data.forEach(async (row) => {
-            const deptName = row['deptName'];
-            let exists =  await deptModal.findOne({deptName : row.deptName,IsActive : true})
-            if(!exists){
-                let payload = {
-                    deptName : row.deptName,
-                    schemeDetails : [
-                        {
-                            schemeId : row.schemeId, 
-                            schemeName : row.schemeName,
-                            'questionnaire':[
-                                {
-                                    question : row.question,
-                                    range : JSON.parse(row.Range)
-                                }
-                            ]
-                        }
-                    ]
+             deptName = row['deptName'];
+             schemeId = row['schemeId'];
+             schemeName = row['schemeName'];
+             question = row['question'];
+             range = row['range'];
+            schemeArray.push({
+                schemeId: schemeId,
+                schemeName: schemeName,
+                questionnaire: {
+                    question: question,
+                    range: JSON.parse(range)
                 }
-                let modal = new deptModal(payload)
-               await  modal.save()
-                    .then(() => {
-                       return  res.status(201).send({message : `dept Inserted:`,data: modal, success: true});
-                    })
-                    .catch((err) => {
-                        return  res.status(201).send({message : `Error updating ${deptName}:`, data: err});
-                    });
-            } else {
-                let payload = {
-                    schemeId : row.schemeId, 
-                    schemeName : row.schemeName,
-                    'questionnaire':[
-                        {
-                            question : row.question,
-                            range : JSON.parse(row.Range)
-                        }
-                    ]
-                }
-                
-                let uodate = await deptModal.findOneAndUpdate({deptName : row.deptName},{ $addToSet: { "schemeDetails": { $each: [payload]}}},{upsert:true})
-                    .then(() => {
-                        return  res.status(201).send({message : `dept updated:`,data: uodate, success: true});
-                    })
-                    .catch((err) => {
-                        console.error(`Error updating ${deptName}:`, err);
-                    });
-            }
+            })
         })
+        let exists = await deptModal.findOne({ deptName: deptName, IsActive: true })
+        if (!exists) {
+
+            let payload = {
+                deptName: deptName,
+                schemeDetails: schemeArray 
+            }
+            let modal = new deptModal(payload)
+            await modal.save()
+                .then(() => {
+                    return res.status(201).send({ message: `dept Inserted:`, data: modal, success: true });
+                })
+                .catch((err) => {
+                    return res.status(201).send({ message: `Error updating ${deptName}:`, data: err });
+                });
+        }
+        // se {
+        //     let uodate = await deptModal.findOneAndUpdate({ deptName: deptName }, { $addToSet: { "schemeDetails": { $each: 'schemeDetails': { schemeArray } } } }, { upsert: true })
+        //     return res.status(201).send({ message: `dept updated:`, data: uodate, success: true });
+        // }     el   
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
