@@ -17,6 +17,9 @@ const deptSchema = new Schema({
                 question:{
                     type:String
                 },
+                answer:{
+                    type:String
+                },
                 range :[ String ]
             }]
         }
