@@ -6,15 +6,12 @@ import otpGenerator from "otp-generator";
 import userModal from '../modal/userModal'
 import otpModal from '../modal/userOTPModal'
 import { generateAccessToken } from '../middleware/auth';
-import initMB from 'messagebird';
-import { sendEmail } from '../utils/email-auth'
 
 
 import * as dotenv from 'dotenv'
 import mongoose from 'mongoose';
 import zoneModal from '../modal/zoneModal';
 dotenv.config()
-const FAST2SMS = process.env.FAST2SMS;
 let jwtkey = process.env.JWTSECRET_KEY as any
 async function comparePassword(plaintextPassword: string | Buffer, hash: string) {
     const result = await bcrypt.compare(plaintextPassword, hash);
