@@ -19,7 +19,7 @@ import * as xlsx from "xlsx/xlsx";
 // }
 export async function addNewDepartment(req: Request, res: Response) {
     try {
-        let { deptName, schemeName, schemeId, deptId, question, range } = req.body
+        let { deptName, schemeName, schemeId, deptId, question, range,answer } = req.body
         if (!deptName) return res.status(400).send("Kindly send dept Name");
 
         
@@ -44,6 +44,7 @@ export async function addNewDepartment(req: Request, res: Response) {
                 'questionnaire':[
                     {
                         question : question,
+                        answer : answer,
                         range : range
                     }
                 ]
@@ -62,8 +63,10 @@ export async function updateQuestion(req: Request, res: Response) {
     try {
 
         let filter = { _id: new mongoose.Types.ObjectId(id) };
-        let { schemeId, question, questionId,  range } = req.body;
-
+        let { schemeId, question,answer, questionId,  range } = req.body;
+        if(!answer){
+            answer= '';
+        }
         let isExist = await deptModal.findById({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
         if (!isExist) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
 
@@ -71,13 +74,16 @@ export async function updateQuestion(req: Request, res: Response) {
             let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId, "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionId) },
                 { $set: { "schemeDetails.$[scheme].questionnaire.$[question].question": question } },
                 { arrayFilters: [{ "scheme.schemeId": schemeId }, { "question._id": new mongoose.Types.ObjectId(questionId) }] })
+            await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId, "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionId) },
+                { $set: { "schemeDetails.$[scheme].questionnaire.$[question].answer": answer } },
+                { arrayFilters: [{ "scheme.schemeId": schemeId }, { "question._id": new mongoose.Types.ObjectId(questionId) }] })
             return res.status(201).send({ message: 'Successfully updated question', data: result, success: true });
         } else {
             // let query = { _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId }
             // let setQuery =  { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, range: range } } }
             // let options = { new: true };
             let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId }, 
-            { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, range: range } } }, {new : true})
+            { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, answer:answer, range: range } } }, {new : true})
             return res.status(201).send({ message: 'Successfully added new question', data: result, success: true });
         };
     } catch (error) {

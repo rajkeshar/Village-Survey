@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response } from 'express'
 import mongoose from 'mongoose';
+import deptModal from '../modal/departmentModal';
 import surveyModal from '../modal/inspecionModal'
 
 export async function addNewSurvey(req: Request, res: Response) {
@@ -96,6 +97,28 @@ export async function getSurveyDateRange(req: Request, res: Response) {
     try {
         let surveyList = await surveyModal.findOne({ IsActive: true,IsOnGoingSurvey : "OnGoing" }, { surveyStartDate: 1,surveyEndDate:1, _id: 1 });
         return res.status(201).json({ message: "fetched  successfully", success: true, data: surveyList })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function submitSurvey(req: Request, res: Response) {
+    try {
+        let surveyId = req.params.id;
+        let {deptId,villageId,surveyorLoginId,questionId,rating,schemeId} = req.body;
+        if(!surveyId){
+            return res.status(400).json({ message: "SurveyId is required"})
+        }
+        let existSurvey = await surveyModal.findOne({ _id: new mongoose.Types.ObjectId(surveyId),IsOnGoingSurvey : "OnGoing" });
+        if(!existSurvey) return res.status(400).json({ message: "Survey is not exists, Invalid Id"})
+        await surveyModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(surveyId) },
+        { $set: { surveyorLoginId: surveyorLoginId} } , { new :true})
+        let submitSurvey = await surveyModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(surveyId) },
+        { $addToSet: { villageUniqueIds: villageId, departmentIds: new mongoose.Types.ObjectId(deptId) } } , { new :true})
+        let updateRatings = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(deptId), "schemeDetails.schemeId": schemeId},
+        { $set: {"schemeDetails.$[outer].questionnaire.$[inner].answer": rating } },
+        { arrayFilters: [{ "outer.schemeId": schemeId }, { "inner._id": new mongoose.Types.ObjectId(questionId)} ] ,new: true })
+        return res.status(201).json({ message: "fetched  successfully", success: true, data: submitSurvey })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })

@@ -6,15 +6,12 @@ import otpGenerator from "otp-generator";
 import userModal from '../modal/userModal'
 import otpModal from '../modal/userOTPModal'
 import { generateAccessToken } from '../middleware/auth';
-import initMB from 'messagebird';
-import { sendEmail } from '../utils/email-auth'
 
 
 import * as dotenv from 'dotenv'
 import mongoose from 'mongoose';
 import zoneModal from '../modal/zoneModal';
 dotenv.config()
-const FAST2SMS = process.env.FAST2SMS;
 let jwtkey = process.env.JWTSECRET_KEY as any
 async function comparePassword(plaintextPassword: string | Buffer, hash: string) {
     const result = await bcrypt.compare(plaintextPassword, hash);
@@ -556,6 +553,17 @@ export async function checkDuplicateDeparmentAssignInVillage(req: Request, res: 
             }
         });
         return res.status(200).json({ message: `dept assign successfully.`,  success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function getUserAssignedVillageAndDepartment(req: Request, res: Response) {
+    let { id } = req.params;
+    try {
+        let user = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true },{"AssignVillage":1,"AssignDepartments":1})
+        if (!user.length) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
+        return res.status(201).send({ message: 'Successfully fetched', data: user, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })

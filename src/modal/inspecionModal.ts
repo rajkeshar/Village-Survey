@@ -5,14 +5,14 @@ const surveySchema = new Schema({
         type :String,
         required : true
     },
-    surveyorName:{
+    surveyorLoginId:{
         type :String
     },
-    villageName:{
+    villageUniqueIds:{
         type :Array
     },
-    departmentName:{
-        type :Array
+    departmentIds:{
+        type :[mongoose.Schema.Types.ObjectId]
     },
     surveyStartDate:{
         type :Date
@@ -24,6 +24,10 @@ const surveySchema = new Schema({
         type :String, 
         enum: ["pending", "OnGoing", "completed"],
         default:"pending"
+    },
+    surveySubmitDateTime:{
+        type:Date,
+        default: Date.now()
     },
     IsActive:{
         type:Boolean,

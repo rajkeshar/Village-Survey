@@ -1,7 +1,4 @@
-// import express from 'express'
-import initMB from 'messagebird';
- import * as dotenv from 'dotenv'
-import otpModal from '../modal/userOTPModal';
+import * as dotenv from 'dotenv'
 
 dotenv.config();
 
