@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express'
 import mongoose from 'mongoose';
 import deptModal from '../modal/departmentModal';
 import surveyModal from '../modal/inspecionModal'
+import submitSurveyModal from '../modal/submitSurveyModal';
 
 export async function addNewSurvey(req: Request, res: Response) {
     try {
@@ -16,9 +17,9 @@ export async function addNewSurvey(req: Request, res: Response) {
                 surveyEndDate: surveyEndDate, 
                 surveyorName: surveyorName
             });
-
             await newSurvey.save();
-
+            let a = new submitSurveyModal({ surveyId: new mongoose.Types.ObjectId(newSurvey._id)});
+            await a.save();
             return res.status(201).json({ message: "Survey created successfully", success: true, data: newSurvey });
     } catch (error) {
         console.log(error);
@@ -118,6 +119,8 @@ export async function submitSurvey(req: Request, res: Response) {
         let updateRatings = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(deptId), "schemeDetails.schemeId": schemeId},
         { $set: {"schemeDetails.$[outer].questionnaire.$[inner].answer": rating } },
         { arrayFilters: [{ "outer.schemeId": schemeId }, { "inner._id": new mongoose.Types.ObjectId(questionId)} ] ,new: true })
+        await submitSurveyModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(surveyId)},
+        { $addToSet: { surveyDetail : {email : surveyorLoginId, villageUniqueId: villageId, deptId: new mongoose.Types.ObjectId(deptId) }} } , { new :true})
         return res.status(201).json({ message: "fetched  successfully", success: true, data: submitSurvey })
     } catch (error) {
         console.log(error);
