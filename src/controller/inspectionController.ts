@@ -119,8 +119,9 @@ export async function submitSurvey(req: Request, res: Response) {
         let updateRatings = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(deptId), "schemeDetails.schemeId": schemeId},
         { $set: {"schemeDetails.$[outer].questionnaire.$[inner].answer": rating } },
         { arrayFilters: [{ "outer.schemeId": schemeId }, { "inner._id": new mongoose.Types.ObjectId(questionId)} ] ,new: true })
-        await submitSurveyModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(surveyId)},
-        { $addToSet: { surveyDetail : {email : surveyorLoginId, villageUniqueId: villageId, deptId: new mongoose.Types.ObjectId(deptId) }} } , { new :true})
+        await submitSurveyModal.findOneAndUpdate({ surveyId: new mongoose.Types.ObjectId(surveyId)},
+        { $addToSet: { surveyDetail : {email : surveyorLoginId, villageUniqueId: villageId
+            , deptId: new mongoose.Types.ObjectId(deptId) }} }  , { new :true})
         return res.status(201).json({ message: "fetched  successfully", success: true, data: submitSurvey })
     } catch (error) {
         console.log(error);
