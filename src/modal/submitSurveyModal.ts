@@ -14,7 +14,7 @@ const submitSurveySchema = new Schema({
             ref: 'department'
         },
         villageUniqueId: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: String,
             ref: 'zone'
         }
     }]
