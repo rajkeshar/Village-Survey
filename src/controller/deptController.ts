@@ -123,6 +123,21 @@ export async function getDepartmentById(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function fetchDepartmentListById(req: Request, res: Response) {
+    let { deptIds } = req.body;
+    try {
+        let deptArray = [] as any;
+        for (let id = 0; id < deptIds.length; id++) {
+            let ID = deptIds[id]
+            let dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(ID), 'IsActive': true })
+            deptArray.push(dept)
+        }
+        return res.status(201).send({ message: 'Successfully listed', data: deptArray, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
 export async function deleteDepartment(req: Request, res: Response) {
     try {
         let { id } = req.params;
