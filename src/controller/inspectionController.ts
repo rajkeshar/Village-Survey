@@ -127,3 +127,36 @@ export async function submitSurvey(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function monthlySurveyCompleted(req: Request, res: Response) {
+    try {
+        
+        let month = req.params.mon as any;
+        let year = new Date().getFullYear(); // get the current year
+        let startDate = new Date(year, month - 1, 1).toISOString(); // set the year and month, and set the day to 1
+        let endDate = new Date(year, month, 1).toISOString(); // set the year and month, and set the day to 1\
+        let surveyList = await surveyModal.find({
+            $and: [
+                {
+                    "surveyEndDate": {
+                        $gte:startDate,
+                        $lt: endDate
+                    }
+                },
+                {
+                    "IsOnGoingSurvey": "completed"
+                }
+            ]
+        })
+        return res.status(201).json({ message: "fetched  successfully", success: true, data : surveyList })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+async function getFirstDayOfMonth(month) {
+    let year = new Date().getFullYear(); // get the current year
+    let startdate = new Date(year, month - 1, 1); // set the year and month, and set the day to 1
+    let enddate = new Date(year, month, 1); // set the year and month, and set the day to 1\
+    
+  }
+
