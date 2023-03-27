@@ -16,7 +16,7 @@ export async function addNotification(req: Request, res: Response) {
 export async function getNotificationById(req: Request, res: Response) {
     try {
         let { id } = req.params
-        let notification = await notificationModal.findById({ id });
+        let notification = await notificationModal.findOne( {_id:new mongoose.Types.ObjectId(id)});
         if (!notification) return res.status(400).json({ message: "notification not existed" })
         return res.status(201).json({ message: "notification send successfully", success: true, data: notification });
     } catch (error) {
@@ -37,10 +37,10 @@ export async function updateNotification(req: Request, res: Response) {
     try {
         let { message, isPinned } = req.body
         let { id } = req.params;
-        let notification = await notificationModal.findById(id);
+        let notification = await notificationModal.findOne({_id:new mongoose.Types.ObjectId(id)});
         if (!notification) return res.status(201).json({ message: "notification send successfully" })
-        let result = await notificationModal.findByIdAndUpdate(id,
-            {$set :{message : message,isPinned:isPinned}},
+        let result = await notificationModal.findOneAndUpdate({_id:new mongoose.Types.ObjectId(id)}
+            ,{$set :{message : message,isPinned:isPinned}},
             {new:true}
             )
         return res.status(201).json({ message: "notification send successfully", success: true, data: notification });
