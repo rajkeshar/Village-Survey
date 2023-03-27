@@ -22,7 +22,8 @@ async function hashPassword(plaintextPassword: string | Buffer) {
     return hash;
 }
 export async function signUp(req: Request, res: Response) {
-    createUser(req, 'admin', res);
+    let role = req.body?.role;
+    createUser(req, role, res);
 }
 // export async function createUser(req: Request, res: Response, next: NextFunction) {
 //     let { fullname, role, email, password, contactNumber, ReportingAuthorityName, EmpID,
@@ -92,7 +93,8 @@ export async function superAdminRegister(req: Request, res: Response) {
 export async function createUser(req: any, role: string, res: Response) {
 
     let { fullname, email, password, contactNumber, ReportingAuthorityName, EmpID,
-        UniqueIDNumber, AssignedSurveyDepartment, Designation, CurrentVillageName, CurrentTalukaName, NoofSurveyconducted } = req.body;
+        UniqueIDNumber, AssignedSurveyDepartment, Designation, CurrentVillageName, CurrentTalukaName, 
+        NoofSurveyconducted } = req.body;
     try {
 
         const existingUser = await userModal.findOne({ email: email, IsActive: true });
