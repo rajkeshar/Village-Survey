@@ -43,7 +43,7 @@ export async function updateNotification(req: Request, res: Response) {
             ,{$set :{message : message,isPinned:isPinned}},
             {new:true}
             )
-        return res.status(201).json({ message: "notification send successfully", success: true, data: notification });
+        return res.status(201).json({ message: "notification send successfully", success: true, data: result });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
