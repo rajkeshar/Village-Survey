@@ -1,7 +1,7 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
 import { addNewZone, addNewVillage, deleteZone, getAllBlocks, getAllDistrict, getAllVillage, getZoneById,
      updateZone, getAllZone, deleteBlockOrVillage, getCountOfAllVillage, getCountOfAllBlocks, addNewTaluka, 
-     getAllTaluka, getAllVillageBasedOnTalukId, getBlockById, uploadZoneData,  isVillageDisbaleTrue,getRemainingVillageFromAssignment, getAllTalukaList } from '../controller/zoneController';
+     getAllTaluka, getAllVillageBasedOnTalukId, getBlockById, uploadZoneData,  isVillageDisbaleTrue,getRemainingVillageFromAssignment, getAllTalukaList, searchVillageName } from '../controller/zoneController';
 import { upload,uploadVillage } from '../middleware/auth';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
@@ -26,6 +26,7 @@ router.post('/uploadexcelvillage',uploadVillage, uploadZoneData)
 router.post('/villagedisable/:id', isVillageDisbaleTrue)
 router.get('/getalltaluka', getAllTalukaList)
 router.get('/getallremainingvilage', getRemainingVillageFromAssignment)
+router.get('/villagesearch/:searchquery', searchVillageName)
 
 
 
