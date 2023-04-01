@@ -127,7 +127,7 @@ export async function fetchDepartmentListById(req: Request, res: Response) {
     let { deptIds } = req.body;
     try {
         let deptArray = [] as any;
-            let deptName =''
+            // let deptName =''
             let schemeName=''as any
             let schemeId=''as any
             let range=''as any
@@ -138,8 +138,8 @@ export async function fetchDepartmentListById(req: Request, res: Response) {
             let ID = deptIds[id]
             let dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(ID), 'IsActive': true })
             
-            obj.deptName = dept?.deptName;
-            obj._id = dept?._id;
+            const deptName = dept?.deptName;
+            const deptId = dept?._id;
             dept?.schemeDetails.forEach(schemeDetail => {
                 const schemeName = schemeDetail.schemeName;
                 const schemeId = schemeDetail.schemeId;
@@ -151,7 +151,9 @@ export async function fetchDepartmentListById(req: Request, res: Response) {
                     range: question.range,
                     questionId: question._id,
                     schemeName,
-                    schemeId
+                    schemeId,
+                    deptName,
+                    deptId
                   };
                   deptArray.push(questionObj);
                 });
