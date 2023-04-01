@@ -19,39 +19,39 @@ import * as xlsx from "xlsx/xlsx";
 // }
 export async function addNewDepartment(req: Request, res: Response) {
     try {
-        let { deptName, schemeName, schemeId, deptId, question, range,answer } = req.body
+        let { deptName, schemeName, schemeId, deptId, question, range, answer } = req.body
         if (!deptName) return res.status(400).send("Kindly send dept Name");
 
-        
-        let setQuery = { 
-            deptName:deptName
+
+        let setQuery = {
+            deptName: deptName
             // "schemeDetails" :[{
             //     schemeId : schemeId , 
             //     schemeName : schemeName
             // }] 
-        } as any 
-        if(!deptId){
-        let isAlreadyExist = await deptModal.findOne({ deptName }).lean() as any;
-        if (isAlreadyExist) return res.status(400).send("This dept already exist");
+        } as any
+        if (!deptId) {
+            let isAlreadyExist = await deptModal.findOne({ deptName }).lean() as any;
+            if (isAlreadyExist) return res.status(400).send("This dept already exist");
             let newDept = new deptModal(setQuery)
             await newDept.save();
             return res.status(201).send({ message: "Succesfully created", data: newDept, success: true });
         } else {
             // const setQuery = {$set : {'schemeDetails.$[e].schemeName' : schemeName}};
             let payload = {
-                schemeId : schemeId, 
-                schemeName : schemeName,
-                'questionnaire':[
+                schemeId: schemeId,
+                schemeName: schemeName,
+                'questionnaire': [
                     {
-                        question : question,
-                        answer : answer,
-                        range : range
+                        question: question,
+                        answer: answer,
+                        range: range
                     }
                 ]
             }
-            const setQuery = { $addToSet: { "schemeDetails": { $each: [payload]}}};
-            const updatedept = await deptModal.findOneAndUpdate({ _id : new mongoose.Types.ObjectId(deptId)} , setQuery ,{new : true});
-            return res.status(201).send({ message: "Succesfully added  scheme",data:updatedept, success: true });
+            const setQuery = { $addToSet: { "schemeDetails": { $each: [payload] } } };
+            const updatedept = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(deptId) }, setQuery, { new: true });
+            return res.status(201).send({ message: "Succesfully added  scheme", data: updatedept, success: true });
         }
     } catch (error) {
         console.log(error);
@@ -63,9 +63,9 @@ export async function updateQuestion(req: Request, res: Response) {
     try {
 
         let filter = { _id: new mongoose.Types.ObjectId(id) };
-        let { schemeId, question,answer, questionId,  range } = req.body;
-        if(!answer){
-            answer= '';
+        let { schemeId, question, answer, questionId, range } = req.body;
+        if (!answer) {
+            answer = '';
         }
         let isExist = await deptModal.findById({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
         if (!isExist) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
@@ -82,8 +82,8 @@ export async function updateQuestion(req: Request, res: Response) {
             // let query = { _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId }
             // let setQuery =  { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, range: range } } }
             // let options = { new: true };
-            let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId }, 
-            { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, answer:answer, range: range } } }, {new : true})
+            let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId },
+                { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, answer: answer, range: range } } }, { new: true })
             return res.status(201).send({ message: 'Successfully added new question', data: result, success: true });
         };
     } catch (error) {
@@ -127,10 +127,36 @@ export async function fetchDepartmentListById(req: Request, res: Response) {
     let { deptIds } = req.body;
     try {
         let deptArray = [] as any;
+            let deptName =''
+            let schemeName=''as any
+            let schemeId=''as any
+            let range=''as any
+            let question=''as any
+            let questionId='' as any
+        let obj = {} as any;
         for (let id = 0; id < deptIds.length; id++) {
             let ID = deptIds[id]
             let dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(ID), 'IsActive': true })
-            deptArray.push(dept)
+            
+            obj.deptName = dept?.deptName;
+            obj._id = dept?._id;
+            dept?.schemeDetails.forEach(schemeDetail => {
+                const schemeName = schemeDetail.schemeName;
+                const schemeId = schemeDetail.schemeId;
+                const schemeObj = { schemeName, schemeId };
+                // deptArray.push(schemeObj);
+                schemeDetail.questionnaire?.forEach((question:any) => {
+                  const questionObj = {
+                    question: question.question,
+                    range: question.range,
+                    questionId: question._id,
+                    schemeName,
+                    schemeId
+                  };
+                  deptArray.push(questionObj);
+                });
+              });
+              
         }
         return res.status(201).send({ message: 'Successfully listed', data: deptArray, success: true });
     } catch (error) {
@@ -141,11 +167,11 @@ export async function fetchDepartmentListById(req: Request, res: Response) {
 export async function deleteDepartment(req: Request, res: Response) {
     try {
         let { id } = req.params;
-        const dept = await deptModal.findOne({_id : new mongoose.Types.ObjectId(id) })
-       
+        const dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(id) })
+
         if (!dept) return res.status(404).send({ message: "Id is not found, Invalid Id" });
-        await deptModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id) }, 
-        {$set :{ 'IsActive' : false}});
+        await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) },
+            { $set: { 'IsActive': false } });
         return res.status(200).send({ message: 'Successfully deleted', success: true });
     } catch (error) {
         console.log(error);
@@ -162,7 +188,7 @@ export async function getAllDepartment(req: Request, res: Response) {
     }
 }
 export async function getAllDepartmentAndScheme(req: Request, res: Response) {
-    const deptList = await deptModal.find({'IsActive' : true});
+    const deptList = await deptModal.find({ 'IsActive': true });
     try {
         res.send({ message: "department list fetched successfully", data: deptList });
     } catch (error) {
@@ -173,8 +199,8 @@ export async function getAllDepartmentAndScheme(req: Request, res: Response) {
 export async function getSchemeByDepartment(req: Request, res: Response) {
     let { id } = req.params;
     try {
-        const dept = await deptModal.findOne({ _id : new mongoose.Types.ObjectId(id), 'IsActive' : true}) as any
-        if(!dept) return res.status(400).send({message : 'Dept id not found, Invalid Id'}); 
+        const dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true }) as any
+        if (!dept) return res.status(400).send({ message: 'Dept id not found, Invalid Id' });
         let schemeDetail = dept.schemeDetails
         res.send({ message: "scheme list fetched successfully", data: schemeDetail });
     } catch (error) {
@@ -183,14 +209,14 @@ export async function getSchemeByDepartment(req: Request, res: Response) {
     }
 }
 export async function getQuestionnaireByDepartment(req: Request, res: Response) {
-    let { schemeId, questionnaireId} = req.body;
+    let { schemeId, questionnaireId } = req.body;
     try {
-        if(!schemeId || !questionnaireId) return res.status(400).send({ message: "send schemeId and questionnaireId"});
-        let questionDetails = await deptModal.findOne({ 
-            "schemeDetails.schemeId": schemeId, 
-            "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionnaireId) 
+        if (!schemeId || !questionnaireId) return res.status(400).send({ message: "send schemeId and questionnaireId" });
+        let questionDetails = await deptModal.findOne({
+            "schemeDetails.schemeId": schemeId,
+            "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionnaireId)
         }, { "schemeDetails.questionnaire.$": 1 })
-        if(!questionDetails) return res.status(400).send({ message: "Id not found,Invalid Id"});
+        if (!questionDetails) return res.status(400).send({ message: "Id not found,Invalid Id" });
         return res.status(201).send({ message: "question list fetched successfully", data: questionDetails });
     } catch (error) {
         console.log(error);
@@ -198,12 +224,12 @@ export async function getQuestionnaireByDepartment(req: Request, res: Response) 
     }
 }
 export async function deleteScheme(req: Request, res: Response) {
-    let { id,schemename } = req.params;
+    let { id, schemename } = req.params;
     try {
-        const dept = await deptModal.findOne({ _id : new mongoose.Types.ObjectId(id), 'IsActive' : true}) as any
-        if(!dept) return res.status(400).send({message : 'Dept id not found, Invalid Id'}); 
-        let result = await deptModal.findOneAndUpdate({_id : new mongoose.Types.ObjectId(id)},
-        { $pull: { 'schemeDetails':{ 'schemeName': schemename }}}) 
+        const dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true }) as any
+        if (!dept) return res.status(400).send({ message: 'Dept id not found, Invalid Id' });
+        let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) },
+            { $pull: { 'schemeDetails': { 'schemeName': schemename } } })
         res.send({ message: "scheme list fetched successfully", data: result });
     } catch (error) {
         console.log(error);
@@ -219,18 +245,18 @@ export async function uploadSchemeData(req: any, res: Response) {
         const data = xlsx.utils.sheet_to_json(sheet);
         let schemeArray = [] as any;
         let questionArray = [] as any;
-        let deptName ='';
-        let schemeId ='';
-        let schemeName ='';
-        let question ='';
-        let range ='';
+        let deptName = '';
+        let schemeId = '';
+        let schemeName = '';
+        let question = '';
+        let range = '';
         // loop through the data and update the collection
         data.forEach(async (row) => {
-             deptName = row['deptName'];
-             schemeId = row['schemeId'];
-             schemeName = row['schemeName'];
-             question = row['question'];
-             range = row['range'];
+            deptName = row['deptName'];
+            schemeId = row['schemeId'];
+            schemeName = row['schemeName'];
+            question = row['question'];
+            range = row['range'];
             schemeArray.push({
                 schemeId: schemeId,
                 schemeName: schemeName,
@@ -245,7 +271,7 @@ export async function uploadSchemeData(req: any, res: Response) {
 
             let payload = {
                 deptName: deptName,
-                schemeDetails: schemeArray 
+                schemeDetails: schemeArray
             }
             let modal = new deptModal(payload)
             await modal.save()
