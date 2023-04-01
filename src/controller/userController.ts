@@ -587,3 +587,24 @@ export async function pullVillageFromSurveyor(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function pullDepartmentsFromSurveyor(req: Request, res: Response) {
+    let { id } = req.params;
+    let {deptIds} = req.body;
+    let departmentIdsArray = '' as any; 
+    try {
+        deptIds.forEach((deptId) =>{
+            new mongoose.Types.ObjectId(deptId)
+            departmentIdsArray.push(deptId)
+        })
+        let user = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
+        if (!user.length) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
+        await userModal.findOneAndUpdate(
+            {  _id: new mongoose.Types.ObjectId(id)},
+            { $pull: { "AssignDepartments.departments": { $in:  departmentIdsArray } } }
+         )
+        return res.status(201).send({ message: 'Successfully removed', success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
