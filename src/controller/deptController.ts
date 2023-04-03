@@ -40,14 +40,7 @@ export async function addNewDepartment(req: Request, res: Response) {
             // const setQuery = {$set : {'schemeDetails.$[e].schemeName' : schemeName}};
             let payload = {
                 schemeId: schemeId,
-                schemeName: schemeName,
-                'questionnaire': [
-                    {
-                        question: question,
-                        answer: answer,
-                        range: range
-                    }
-                ]
+                schemeName: schemeName
             }
             const setQuery = { $addToSet: { "schemeDetails": { $each: [payload] } } };
             const updatedept = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(deptId) }, setQuery, { new: true });
@@ -63,7 +56,7 @@ export async function updateQuestion(req: Request, res: Response) {
     try {
 
         let filter = { _id: new mongoose.Types.ObjectId(id) };
-        let { schemeId, question, answer, questionId, range } = req.body;
+        let { schemeId, question, answer, questionId, range,noofButtons,valueAgainstEveryRangeElement } = req.body;
         if (!answer) {
             answer = '';
         }
@@ -72,7 +65,11 @@ export async function updateQuestion(req: Request, res: Response) {
 
         if (questionId) {
             let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId, "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionId) },
-                { $set: { "schemeDetails.$[scheme].questionnaire.$[question].question": question } },
+                { $set: { "schemeDetails.$[scheme].questionnaire.$[question].question": question,
+                "schemeDetails.$[scheme].questionnaire.$[question].range": range,
+                "schemeDetails.$[scheme].questionnaire.$[question].noofButtons": noofButtons,
+                "schemeDetails.$[scheme].questionnaire.$[question].valueAgainstEveryRangeElement": valueAgainstEveryRangeElement, 
+             } },
                 { arrayFilters: [{ "scheme.schemeId": schemeId }, { "question._id": new mongoose.Types.ObjectId(questionId) }] })
             await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId, "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionId) },
                 { $set: { "schemeDetails.$[scheme].questionnaire.$[question].answer": answer } },
@@ -83,7 +80,8 @@ export async function updateQuestion(req: Request, res: Response) {
             // let setQuery =  { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, range: range } } }
             // let options = { new: true };
             let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId },
-                { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, answer: answer, range: range } } }, { new: true })
+                { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, answer: answer, range: range,
+                    noofButtons:noofButtons,valueAgainstEveryRangeElement:valueAgainstEveryRangeElement } } }, { new: true })
             return res.status(201).send({ message: 'Successfully added new question', data: result, success: true });
         };
     } catch (error) {
