@@ -1,6 +1,6 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
 import {checkRole} from '../utils/user-auth'
-import { getUserById,deleteUser, forgetPassword,departmentAssignmentForSurveyor, logIn,getAllUser, loginSuperAdmin, signUp, superAdminRegister, updateUser,  verifyOTP, makeInspectoreProfile, villageAssignmentForSurveyor, checkDuplicateDeparmentAssignInVillage, getUserAssignedVillageAndDepartment, pullVillageFromSurveyor, pullDepartmentsFromSurveyor} from '../controller/userController';
+import { getUserById,deleteUser, forgetPassword,departmentAssignmentForSurveyor, logIn,getAllUser, loginSuperAdmin, signUp, superAdminRegister, updateUser,  verifyOTP, makeInspectoreProfile, villageAssignmentForSurveyor, checkDuplicateDeparmentAssignInVillage, getUserAssignedVillageAndDepartment, pullVillageFromSurveyor, pullDepartmentsFromSurveyor, getAssignVillageName} from '../controller/userController';
 import { authenticateToken } from '../middleware/auth';
 const router = express.Router();
 
@@ -18,6 +18,7 @@ router.post('/resetpassword/verifyotp', verifyOTP)
 
 router.delete('/deleteuser/:id', deleteUser)
 router.get('/getuser/:id', getUserById)
+router.get('/getvillagename/:id', getAssignVillageName)
 router.post('/updateuser/:id',  updateUser)
 router.get('/getalluser',  getAllUser)
 router.post('/villageassignmentofsurveyor/:id',  villageAssignmentForSurveyor)
