@@ -56,7 +56,7 @@ export async function updateQuestion(req: Request, res: Response) {
     try {
 
         let filter = { _id: new mongoose.Types.ObjectId(id) };
-        let { schemeId, question, answer, questionId, range,noofButtons,valueAgainstEveryRangeElement } = req.body;
+        let { schemeId, question, answer, questionId, range, noofButtons, valueAgainstEveryRangeElement } = req.body;
         if (!answer) {
             answer = '';
         }
@@ -65,11 +65,14 @@ export async function updateQuestion(req: Request, res: Response) {
 
         if (questionId) {
             let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId, "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionId) },
-                { $set: { "schemeDetails.$[scheme].questionnaire.$[question].question": question,
-                "schemeDetails.$[scheme].questionnaire.$[question].range": range,
-                "schemeDetails.$[scheme].questionnaire.$[question].noofButtons": noofButtons,
-                "schemeDetails.$[scheme].questionnaire.$[question].valueAgainstEveryRangeElement": valueAgainstEveryRangeElement, 
-             } },
+                {
+                    $set: {
+                        "schemeDetails.$[scheme].questionnaire.$[question].question": question,
+                        "schemeDetails.$[scheme].questionnaire.$[question].range": range,
+                        "schemeDetails.$[scheme].questionnaire.$[question].noofButtons": noofButtons,
+                        "schemeDetails.$[scheme].questionnaire.$[question].valueAgainstEveryRangeElement": valueAgainstEveryRangeElement,
+                    }
+                },
                 { arrayFilters: [{ "scheme.schemeId": schemeId }, { "question._id": new mongoose.Types.ObjectId(questionId) }] })
             await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId, "schemeDetails.questionnaire._id": new mongoose.Types.ObjectId(questionId) },
                 { $set: { "schemeDetails.$[scheme].questionnaire.$[question].answer": answer } },
@@ -80,8 +83,14 @@ export async function updateQuestion(req: Request, res: Response) {
             // let setQuery =  { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, range: range } } }
             // let options = { new: true };
             let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), "schemeDetails.schemeId": schemeId },
-                { $addToSet: { 'schemeDetails.$.questionnaire': { question: question, answer: answer, range: range,
-                    noofButtons:noofButtons,valueAgainstEveryRangeElement:valueAgainstEveryRangeElement } } }, { new: true })
+                {
+                    $addToSet: {
+                        'schemeDetails.$.questionnaire': {
+                            question: question, answer: answer, range: range,
+                            noofButtons: noofButtons, valueAgainstEveryRangeElement: valueAgainstEveryRangeElement
+                        }
+                    }
+                }, { new: true })
             return res.status(201).send({ message: 'Successfully added new question', data: result, success: true });
         };
     } catch (error) {
@@ -125,17 +134,17 @@ export async function fetchDepartmentListById(req: Request, res: Response) {
     let { deptIds } = req.body;
     try {
         let deptArray = [] as any;
-            // let deptName =''
-            let schemeName=''as any
-            let schemeId=''as any
-            let range=''as any
-            let question=''as any
-            let questionId='' as any
+        // let deptName =''
+        let schemeName = '' as any
+        let schemeId = '' as any
+        let range = '' as any
+        let question = '' as any
+        let questionId = '' as any
         let obj = {} as any;
         for (let id = 0; id < deptIds.length; id++) {
             let ID = deptIds[id]
             let dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(ID), 'IsActive': true })
-            
+
             const deptName = dept?.deptName;
             const deptId = dept?._id;
             dept?.schemeDetails.forEach(schemeDetail => {
@@ -143,20 +152,20 @@ export async function fetchDepartmentListById(req: Request, res: Response) {
                 const schemeId = schemeDetail.schemeId;
                 const schemeObj = { schemeName, schemeId };
                 // deptArray.push(schemeObj);
-                schemeDetail.questionnaire?.forEach((question:any) => {
-                  const questionObj = {
-                    question: question.question,
-                    range: question.range,
-                    questionId: question._id,
-                    schemeName,
-                    schemeId,
-                    deptName,
-                    deptId
-                  };
-                  deptArray.push(questionObj);
+                schemeDetail.questionnaire?.forEach((question: any) => {
+                    const questionObj = {
+                        question: question.question,
+                        range: question.range,
+                        questionId: question._id,
+                        schemeName,
+                        schemeId,
+                        deptName,
+                        deptId
+                    };
+                    deptArray.push(questionObj);
                 });
-              });
-              
+            });
+
         }
         return res.status(201).send({ message: 'Successfully listed', data: deptArray, success: true });
     } catch (error) {
@@ -249,43 +258,96 @@ export async function uploadSchemeData(req: any, res: Response) {
         let schemeId = '';
         let schemeName = '';
         let question = '';
-        let range = '';
+        let range = [] as any;
+        let noofButtons = '';
+        let valueAgainstEveryRangeElement = [] as any;
         // loop through the data and update the collection
-        data.forEach(async (row) => {
+        // data.forEach(async (row) => {
+        //     deptName = row['deptName'];
+        //     schemeId = row['schemeId'];
+        //     schemeName = row['schemeName'];
+        //     question = row['question'];
+        //     range = row['range'];
+        //     schemeArray.push({
+        //         schemeId: schemeId,
+        //         schemeName: schemeName,
+        //         questionnaire: {
+        //             question: question,
+        //             range: JSON.parse(range)
+        //         }
+        //     })
+        // })
+        for (let i = 0; i < data.length; i++) {
+            const row = data[i];
             deptName = row['deptName'];
             schemeId = row['schemeId'];
             schemeName = row['schemeName'];
             question = row['question'];
             range = row['range'];
-            schemeArray.push({
-                schemeId: schemeId,
-                schemeName: schemeName,
-                questionnaire: {
-                    question: question,
-                    range: JSON.parse(range)
+            noofButtons = row['range'];
+            valueAgainstEveryRangeElement = row['valueAgainstEveryRangeElement'];
+            // let exists = await deptModal.findOne({ deptName: deptName, IsActive: true })
+            let exists = await deptModal.findOne({ deptName: deptName, IsActive: true });
+            if (exists) {
+                let schemeIndex = exists.schemeDetails.findIndex(scheme => scheme.schemeId === schemeId);
+                if (schemeIndex >= 0) {
+                    exists.schemeDetails[schemeIndex].questionnaire.push({
+                        question: question,
+                        noofButtons: noofButtons,
+                        range: JSON.parse(range),
+                        valueAgainstEveryRangeElement: JSON.parse(valueAgainstEveryRangeElement)
+                    });
+                    await exists.save()
+                    // .then(() => {
+                    //     return res.status(200).send({ message: `dept updated:`, data: exists, success: true });
+                    // })
+                    // .catch((err) => {
+                    //     return res.status(400).send({ message: `Error updating dept:`, data: err });
+                    // });
+                } else {
+                    // Add new scheme to the existing department document
+                    exists.schemeDetails.push({
+                        schemeId: schemeId,
+                        schemeName: schemeName,
+                        questionnaire: [{
+                            question: question,
+                            noofButtons: noofButtons,
+                            range: JSON.parse(range),
+                            valueAgainstEveryRangeElement: JSON.parse(valueAgainstEveryRangeElement)
+                        }]
+                    });
+                    await exists.save()
+                    // .then(() => {
+                    //     return res.status(200).send({ message: `dept updated:`, data: exists, success: true });
+                    // })
+                    // .catch((err) => {
+                    //     return res.status(400).send({ message: `Error updating dept:`, data: err });
+                    // });
                 }
-            })
-        })
-        let exists = await deptModal.findOne({ deptName: deptName, IsActive: true })
-        if (!exists) {
-
-            let payload = {
-                deptName: deptName,
-                schemeDetails: schemeArray
-            }
-            let modal = new deptModal(payload)
-            await modal.save()
-                .then(() => {
-                    return res.status(201).send({ message: `dept Inserted:`, data: modal, success: true });
-                })
-                .catch((err) => {
-                    return res.status(201).send({ message: `Error updating ${deptName}:`, data: err });
-                });
+            } else {
+                let payload = {
+                    deptName: deptName,
+                    schemeDetails: [{
+                        schemeId: schemeId,
+                        schemeName: schemeName,
+                        questionnaire: [{
+                            question: question,
+                            noofButtons: noofButtons,
+                            range: JSON.parse(range),
+                            valueAgainstEveryRangeElement: JSON.parse(valueAgainstEveryRangeElement)
+                        }]
+                    }]
+                }
+                let modal = new deptModal(payload)
+                await modal.save()
+                // .then(() => {
+                //     return res.status(201).send({ message: `dept Inserted:`, data: modal, success: true });
+                // })
+                // .catch((err) => {
+                //     return res.status(201).send({ message: `Error updating ${deptName}:`, data: err });
+            }   // });
         }
-        // se {
-        //     let uodate = await deptModal.findOneAndUpdate({ deptName: deptName }, { $addToSet: { "schemeDetails": { $each: 'schemeDetails': { schemeArray } } } }, { upsert: true })
-        //     return res.status(201).send({ message: `dept updated:`, data: uodate, success: true });
-        // }     el   
+        return res.status(201).send({ message: `dept updated:`, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
