@@ -29,7 +29,7 @@ router.post('/checkmatrix',  checkDuplicateDeparmentAssignInVillage)
 router.get('/getuservillageanddept/:id',  getUserAssignedVillageAndDepartment)
 router.post('/deselectvillagefromuser/:id',  pullVillageFromSurveyor)
 router.post('/deselectdeptfromuser/:id',  pullDepartmentsFromSurveyor)
-router.get('/getremainingvillagenamebyuserid',  getRemainingVillageFromAssignment)
+router.get('/getremainingvillagenamebyuserid/:id',  getRemainingVillageFromAssignment)
 
 
 export default router;
