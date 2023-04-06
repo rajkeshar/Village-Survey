@@ -17,10 +17,14 @@ const deptSchema = new Schema({
                 question:{
                     type:String
                 },
-                answer:{
+                noofButtons:{
                     type:String
                 },
-                range :[ String ]
+                range :[ String ],
+                valueAgainstEveryRangeElement :[ String ],
+                answer:{   //score of the question
+                    type:Number
+                },
             }]
         }
     ],

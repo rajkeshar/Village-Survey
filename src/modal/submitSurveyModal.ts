@@ -9,9 +9,28 @@ const submitSurveySchema = new Schema({
         email: {
             type: String
         },
-        deptId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'department'
+        departmentScore: {
+            deptId:{
+                type : mongoose.Types.ObjectId
+            },
+            schemeDetails: [
+                {
+                    schemeId: {
+                        type: String
+                    },
+                    questionnaire : [{
+                        questionID:{
+                            type:mongoose.Types.ObjectId
+                        },
+                        score:{   //score of the question
+                            type:Number
+                        },
+                    }]
+                }
+            ],
+        },
+        totalScore : {
+            type: Number
         },
         villageUniqueId: {
             type: String,
