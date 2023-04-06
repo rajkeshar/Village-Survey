@@ -616,12 +616,7 @@ export async function getAssignVillageName(req: Request, res: Response) {
         let user = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
         if (!user.length) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
         let villagesIds = user[0]?.AssignVillage?.villages as any
-        // let deptIds = user[0]?.AssignDepartments?.departments as any
-        // let departmentIdsArray = [] as any
-        // const departmentIds = user[0]?.AssignDepartments?.departments?.map((dept: any) => new mongoose.Types.ObjectId(dept));
-        // const departments = await deptModal.find({ _id: { $in: departmentIds } }, { _id: 1, deptName: 1 }).lean() as any;
-        // Object.entries(deptIds).forEach(([key, value]) => departmentIdsArray.push(value));
-        // const deptNamelist = await deptModal.find({ _id :{$in: departmentIdsArray }},{ "_id": 1 ,deptName: 1}) as any
+       
         let array = [] as any;
         Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
         let result = await zoneModal.find({ "blocks.taluka.villages":{$elemMatch: { "villageUniqueId": { $in :array} }}}, { "blocks.taluka.villages.$": 1 })
@@ -630,8 +625,74 @@ export async function getAssignVillageName(req: Request, res: Response) {
               .filter(village => array.includes(village.villageUniqueId))
               .map(({ villageName, villageUniqueId }) => ({ villageName, villageUniqueId }))
           ) || [] as any;  
-        // const deptandvill = villageArray.concat(departments)        
-        return res.status(201).send({ message: 'Successfully fetched village name',data:villageArray, success: true });
+        let deptList = await userModal.aggregate([
+            { $match: { "AssignDepartments.userId": new mongoose.Types.ObjectId(id) } },
+            { $lookup: {
+                from: "departments",
+                localField: "AssignDepartments.departments",
+                foreignField: "_id",
+                as: "departments"
+              }
+            },
+            { $unwind: "$departments" },
+            { $project: { deptName: "$departments.deptName", _id: 1 } }
+          ])      
+        return res.status(201).send({ message: 'Successfully fetched village name',data:{villageArray,deptList}, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function getRemaingVillageNAmeByUserID(req: Request, res: Response) {
+    let { id } = req.params;
+    try {
+        let user = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
+        if (!user.length) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
+        let villagesIds = user[0]?.AssignVillage?.villages as any
+        let array = [] as any;
+        Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
+        let villages = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka" },
+            { $unwind: "$blocks.taluka.villages" },
+            { $match: {
+                "blocks.taluka.villages.villageUniqueId": {
+                  $nin: array
+                }
+              }
+            },
+            { $group: {
+                _id: "$blocks.taluka.villages.villageName",
+                villageUniqueId: { $push: "$blocks.taluka.villages.villageUniqueId" }
+              }
+            },
+            { $project: {
+                villageName: "$_id",
+                villageUniqueId: 1,
+                _id: 0
+              }
+            }
+          ])          
+        // const villageArray = result[0]?.blocks.flatMap(block =>
+        //     block?.taluka?.villages
+        //       .filter(village => array.includes(village.villageUniqueId))
+        //       .map(({ villageName, villageUniqueId }) => ({ villageName, villageUniqueId }))
+        //   ) || [] as any;  
+        // const deptandvill = villageArray.concat(departments) const result = {};
+        const result = {}
+        for (const village of villages) {
+            if (result[village.talukaName]) {
+            // If the talukaName already exists in the result object,
+            // push the villageName into the existing array
+            result[village.talukaName].push(village.villageName);
+            } else {
+            // Otherwise, create a new array with the villageName and
+            // add it to the result object with the talukaName as the key
+            result[village.talukaName] = [village.villageName];
+            }
+        }
+  
+        return res.status(201).send({ message: 'Successfully fetched village name',data:result, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
