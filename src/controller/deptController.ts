@@ -284,7 +284,7 @@ export async function uploadSchemeData(req: any, res: Response) {
             schemeName = row['schemeName'];
             question = row['question'];
             range = row['range'];
-            noofButtons = row['range'];
+            noofButtons = row['noofButtons'];
             valueAgainstEveryRangeElement = row['valueAgainstEveryRangeElement'];
             // let exists = await deptModal.findOne({ deptName: deptName, IsActive: true })
             let exists = await deptModal.findOne({ deptName: deptName, IsActive: true });
