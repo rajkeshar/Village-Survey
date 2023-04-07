@@ -490,7 +490,8 @@ export async function searchVillageName(req: Request, res: Response) {
     try {
         let searchString = req.params.searchquery;
         var regex = new RegExp(searchString);
-        let result = await zoneModal.aggregate([{ $match: { "pincode": "123456" } },
+        let result = await zoneModal.aggregate([
+            // { $match: { "pincode": "123456" } },
         {
             $project: {
                 _id: 0, villages: {

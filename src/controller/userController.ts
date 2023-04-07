@@ -679,20 +679,20 @@ export async function getRemaingVillageNAmeByUserID(req: Request, res: Response)
         //       .map(({ villageName, villageUniqueId }) => ({ villageName, villageUniqueId }))
         //   ) || [] as any;  
         // const deptandvill = villageArray.concat(departments) const result = {};
-        const result = {}
-        for (const village of villages) {
-            if (result[village.talukaName]) {
-            // If the talukaName already exists in the result object,
-            // push the villageName into the existing array
-            result[village.talukaName].push(village.villageName);
-            } else {
-            // Otherwise, create a new array with the villageName and
-            // add it to the result object with the talukaName as the key
-            result[village.talukaName] = [village.villageName];
-            }
-        }
+        // const result = {}
+        // for (const village of villages) {
+        //     if (result[village.talukaName]) {
+        //     // If the talukaName already exists in the result object,
+        //     // push the villageName into the existing array
+        //     result[village.talukaName].push(village.villageName);
+        //     } else {
+        //     // Otherwise, create a new array with the villageName and
+        //     // add it to the result object with the talukaName as the key
+        //     result[village.talukaName] = [village.villageName];
+        //     }
+        // }
   
-        return res.status(201).send({ message: 'Successfully fetched village name',data:result, success: true });
+        return res.status(201).send({ message: 'Successfully fetched village name',data:villages, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
