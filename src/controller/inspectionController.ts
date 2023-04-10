@@ -118,7 +118,7 @@ export async function getSurveyDateRange(req: Request, res: Response) {
 export async function submitSurvey(req: Request, res: Response) {
     try {
         let surveyId = req.params.id;
-        let {deptId,villageId,surveyDetailArray,surveyorLoginId,questionId,rating,schemeId,schemeName,deptName,question} = req.body;
+        let {deptId,villageId,schemeDetails,surveyorLoginId,deptName} = req.body;
         if(!surveyId){
             return res.status(400).json({ message: "SurveyId is required"})
         }
@@ -132,49 +132,36 @@ export async function submitSurvey(req: Request, res: Response) {
                     surveyorLoginId: surveyorLoginId
                 },
                 $addToSet: { 
-                    villageUniqueIds: { $each: villageId }
+                    villageUniqueIds: { $each: [villageId] },
+                    departmentIds: { $each: [ new mongoose.Types.ObjectId(deptId) ] }
                 } 
             },{ new: true }
         );
         if(!updatedSurvey){
             return res.status(400).send({message:"This Id is not found, Invalid ID"})
         }
-        for (let i = 0; i < surveyDetailArray.length; i++) {
-            // submitSurvey.surveyDetail.push(surveyDetailArray[i]);
-            await surveyModal.findOneAndUpdate(
-                { 
-                    _id: new mongoose.Types.ObjectId(surveyId),
-                    IsOnGoingSurvey: "OnGoing"
-                },
-                {
-                $addToSet: {
-                    surveyDetail: { $each: surveyDetailArray[i] }
-                } }
-                ,{ new: true }
-            );
-        }
-        
-        // let existSurvey = await surveyModal.findOne({ _id: new mongoose.Types.ObjectId(surveyId),IsOnGoingSurvey : "OnGoing" });
-        // if(!existSurvey) return res.status(400).json({ message: "Survey is not exists, Invalid Id"})
-        // await surveyModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(surveyId) },
-        // { $set: { surveyorLoginId: surveyorLoginId} } , { new :true})
-        // let submitSurvey = await surveyModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(surveyId) },
-        // { $addToSet: { villageUniqueIds: villageId, departmentIds: new mongoose.Types.ObjectId(deptId) } } , { new :true})
-        // let updateRatings = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(deptId), "schemeDetails.schemeId": schemeId},
-        // { $set: {"schemeDetails.$[outer].questionnaire.$[inner].answer": rating } },
-        // { arrayFilters: [{ "outer.schemeId": schemeId }, { "inner._id": new mongoose.Types.ObjectId(questionId)} ] ,new: true })
-        // let result = await submitSurveyModal.findOneAndUpdate({ surveyId: new mongoose.Types.ObjectId(surveyId)},
-        // { 
-        //     $set: { 
-        //         email: surveyorLoginId,
-        //         villageUniqueId:villageId
-        //     },
-        //     $addToSet: { 
-        //         villageUniqueIds: villageId, 
-        //         departmentIds: new mongoose.Types.ObjectId(deptId) 
-        //     } 
-        // }, { new :true})
-        return res.status(201).json({ message: "fetched  successfully", success: true, data: submitSurvey })
+        let surveyDetails = {
+                deptId: new mongoose.Types.ObjectId(deptId),
+                deptName: deptName,
+                schemeDetails: schemeDetails.map(({ schemeId, schemeName, questionnaire }) => ({
+                schemeId,
+                schemeName,
+                questionnaire: questionnaire.map(({ question, questionID, score }) => ({
+                    question,
+                    questionID: new mongoose.Types.ObjectId(questionID),
+                    score,
+                })),
+            })),
+         };
+        let payload = {
+            surveyId: new mongoose.Types.ObjectId(surveyId),
+            email: surveyorLoginId,
+            villageUniqueId: villageId,
+            surveyDetail: surveyDetails
+        };
+        let scoring = new  submitSurveyModal( payload )
+        scoring.save();
+        return res.status(201).json({ message: "fetched  successfully", success: true, data: scoring })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
