@@ -161,7 +161,7 @@ export async function submitSurvey(req: Request, res: Response) {
         };
         let scoring = new  submitSurveyModal( payload )
         scoring.save();
-        return res.status(201).json({ message: "fetched  successfully", success: true, data: scoring })
+        return res.status(201).json({ message: "survey submitted successfully", success: true, data: scoring })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
