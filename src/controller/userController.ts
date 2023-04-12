@@ -624,7 +624,34 @@ export async function getAssignVillageName(req: Request, res: Response) {
             block?.taluka?.villages
               .filter(village => array.includes(village.villageUniqueId))
               .map(({ villageName, villageUniqueId }) => ({ villageName, villageUniqueId }))
-          ) || [] as any;  
+          ) || [] as any;
+        let assignVillageArrayCount = villageArray.length; 
+        //   let villagesIds = user[0]?.AssignVillage?.villages as any
+        //   let array = [] as any;
+        //   Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
+          let remaingVillages = await zoneModal.aggregate([
+              { $unwind: "$blocks" },
+              { $unwind: "$blocks.taluka" },
+              { $unwind: "$blocks.taluka.villages" },
+              { $match: {
+                  "blocks.taluka.villages.villageUniqueId": {
+                    $nin: array
+                  }
+                }
+              },
+              { $group: {
+                  _id: "$blocks.taluka.villages.villageName",
+                  villageUniqueId: { $push: "$blocks.taluka.villages.villageUniqueId" }
+                }
+              },
+              { $project: {
+                  villageName: "$_id",
+                  villageUniqueId: 1,
+                  _id: 0
+                }
+              }
+            ])    
+        let remaningVillageArrayCount = remaingVillages?.length;
         let deptList = await userModal.aggregate([
             { $match: { "AssignDepartments.userId": new mongoose.Types.ObjectId(id) } },
             { $lookup: {
@@ -637,7 +664,7 @@ export async function getAssignVillageName(req: Request, res: Response) {
             { $unwind: "$departments" },
             { $project: { deptName: "$departments.deptName",deptId: "$departments._id", _id: 0 } }
           ])      
-        return res.status(201).send({ message: 'Successfully fetched village name',data:{villageArray,deptList}, success: true });
+        return res.status(201).send({ message: 'Successfully fetched village name',data:{remaningVillageArrayCount,assignVillageArrayCount,villageArray,deptList}, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -672,7 +699,7 @@ export async function getRemaingVillageNAmeByUserID(req: Request, res: Response)
                 _id: 0
               }
             }
-          ])          
+          ])     
         // const villageArray = result[0]?.blocks.flatMap(block =>
         //     block?.taluka?.villages
         //       .filter(village => array.includes(village.villageUniqueId))
@@ -691,7 +718,6 @@ export async function getRemaingVillageNAmeByUserID(req: Request, res: Response)
         //     result[village.talukaName] = [village.villageName];
         //     }
         // }
-  
         return res.status(201).send({ message: 'Successfully fetched village name',data:villages, success: true });
     } catch (error) {
         console.log(error);
