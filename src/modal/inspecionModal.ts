@@ -9,7 +9,7 @@ const surveySchema = new Schema({
         type :String
     },
     villageUniqueIds:{
-        type :Array
+        type :[String]
     },
     departmentIds:{
         type :[mongoose.Schema.Types.ObjectId]
