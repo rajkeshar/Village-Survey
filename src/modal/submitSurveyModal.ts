@@ -12,7 +12,10 @@ const submitSurveySchema = new Schema({
         type: String,
         ref: 'zone'
     },
-    surveyDetail: [{
+    villageName: {
+        type: String,
+    },
+    surveyDetail:{
         deptId: {
             type: mongoose.Types.ObjectId
         },
@@ -40,7 +43,10 @@ const submitSurveySchema = new Schema({
                 }]
             }
         ] 
-    }],
+    },
+    totalScore : {
+        type : Number
+    }
 },
     { timestamps: true }
 )
