@@ -118,7 +118,7 @@ export async function getSurveyDateRange(req: Request, res: Response) {
 export async function submitSurvey(req: Request, res: Response) {
     try {
         let surveyId = req.params.id;
-        let {deptId,villageId,schemeDetails,surveyorLoginId,deptName} = req.body;
+        let {deptId,villageId,schemeDetails,surveyorLoginId,deptName,villageName} = req.body;
         if(!surveyId){
             return res.status(400).json({ message: "SurveyId is required"})
         }
@@ -153,11 +153,15 @@ export async function submitSurvey(req: Request, res: Response) {
                 })),
             })),
          };
+        let totalScore = schemeDetails?.reduce((acc, obj) => acc + obj.questionnaire[0].score, 0);
+        
         let payload = {
             surveyId: new mongoose.Types.ObjectId(surveyId),
             email: surveyorLoginId,
             villageUniqueId: villageId,
-            surveyDetail: surveyDetails
+            villageName : villageName,
+            surveyDetail: surveyDetails,
+            totalScore : totalScore
         };
         let scoring = new  submitSurveyModal( payload )
         scoring.save();
@@ -188,6 +192,43 @@ export async function monthlySurveyCompleted(req: Request, res: Response) {
             ]
         })
         return res.status(201).json({ message: "fetched  successfully", success: true, data : surveyList })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function getInspectionsDetails(req: Request, res: Response) {
+    try {
+        let surveyId = req.params.id;
+        if(!surveyId){
+            return res.status(400).json({ message: "SurveyId is required"})
+        }
+       let result = await submitSurveyModal.aggregate([
+          {$match :{ "surveyId" : new mongoose.Types.ObjectId(surveyId)}},
+          {
+            $group: {
+              _id: {
+                villageName :"$villageName",
+                villageUniqueId: "$villageUniqueId",
+                deptName: "$surveyDetail.deptName"
+              },
+              totalScore: { $sum: "$totalScore" }
+            }
+          },
+          {
+            $sort: { totalScore: -1 } // sort by totalScore in descending order
+          },
+          {
+            $project: {
+              _id: 0,
+              villageUniqueId: "$_id.villageUniqueId",
+              villageName :"$_id.villageName",
+              deptName: "$_id.deptName",
+              totalScore: 1
+            }
+          }
+        ])
+        return res.status(201).json({ message: "inspection details fetched successfully", success: true, data: result })       
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
