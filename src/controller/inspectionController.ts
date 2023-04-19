@@ -274,21 +274,17 @@ export async function getScoreBiseRank(req: Request, res: Response) {
             },
         ])
         let rank = 1; // initialize the rank variable to 1
-        for (let i = 0; i < villages.length; i++) {
-            const village = villages[i];
-            if (i > 0 && village.totalScore === villages[i - 1].totalScore) {
-                // if the totalScore is the same as the previous village, assign the same rank
-                village.rank = rank - 1;
-            } else if(i > 1 && villages[i - 2].rank === villages[i - 1].rank) {
-                // if the rank is the same as the previous village, assign the same rank with +2
-                village.rank = rank+ 2;
-            }
-            else {
-                // if the totalScore is different, increment the rank variable and assign the new rank
-                village.rank = rank;
-                rank++;
-            }
-        }
+        let numTiedScores = 0;
+        let lastScore = null;
+        villages?.forEach((village, index) => {
+          if (village.totalScore !== lastScore) {
+            rank += numTiedScores;
+            numTiedScores = 0;
+            lastScore = village.totalScore;
+          }
+          numTiedScores++;
+          village.rank = rank;
+        });
         return res.status(201).json({ message: "fetched successfully", success: true, data: villages })
     } catch (error) {
         console.log(error);
