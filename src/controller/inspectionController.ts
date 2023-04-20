@@ -200,11 +200,12 @@ export async function monthlySurveyCompleted(req: Request, res: Response) {
 export async function getInspectionsDetails(req: Request, res: Response) {
     try {
         let surveyId = req.params.id;
+        let email = req.params.email;
         if (!surveyId) {
             return res.status(400).json({ message: "SurveyId is required" })
         }
         let result = await submitSurveyModal.aggregate([
-            { $match: { "surveyId": new mongoose.Types.ObjectId(surveyId) } },
+            { $match: { "surveyId": new mongoose.Types.ObjectId(surveyId),"email" : email } },
             {
                 $group: {
                     _id: {
