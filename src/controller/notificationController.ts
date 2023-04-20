@@ -24,6 +24,18 @@ export async function getNotificationById(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function deleteNotificationById(req: Request, res: Response) {
+    try {
+        let { id } = req.params
+        let notification = await notificationModal.findOne( {_id:new mongoose.Types.ObjectId(id)});
+        await notificationModal.deleteOne({_id:new mongoose.Types.ObjectId(id)});
+        if (!notification) return res.status(400).json({ message: "notification not existed" })
+        return res.status(201).json({ message: "notification deleted successfully", success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
 export async function getNotificationList(req: Request, res: Response) {
     try {
         let notificationList = await notificationModal.find();
