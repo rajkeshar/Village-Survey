@@ -13,7 +13,7 @@ router.post('/getsurveydate', getSurveyDateRange)
 router.post('/submitsurvey/:id', submitSurvey)
 router.post('/monthlySurveyCompleted/:mon', monthlySurveyCompleted)
 router.get('/isongoingsurveytrue', isOnGoingSurveyTrue)
-router.get('/inspectiondetails/:id', getInspectionsDetails)
+router.get('/inspectiondetails/:id/:email', getInspectionsDetails)
 router.get('/getrankbisescore/:surveyId/:deptId', getScoreBiseRank)
 
 
