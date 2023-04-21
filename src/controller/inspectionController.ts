@@ -299,7 +299,7 @@ export async function progressDetailofSurvey(req: Request, res: Response) {
     try {
         let surveyId = req.params.surveyId;
         if (!surveyId) {
-            return res.status(400).json({ message: "SurveyId and deptId is required" })
+            return res.status(400).json({ message: "SurveyId is required" })
         }
         let villageCount = await zoneModal.aggregate([
             { $unwind: "$blocks" },
@@ -307,7 +307,7 @@ export async function progressDetailofSurvey(req: Request, res: Response) {
             { $count: "totalVillages" }
         ]) as any
         let villageUniqueIdCount = await submitSurveyModal.find({"surveyId" : new mongoose.Types.ObjectId(surveyId)}).distinct('villageUniqueId') as any;
-        let remaingsurveyVillage = villageCount - villageUniqueIdCount.length ;
+        let remaingsurveyVillage = villageCount[0].totalVillages - villageUniqueIdCount.length;
     
         return res.status(201).json({ message: "Remaning Village From survey fetched successfully", success: true, data: remaingsurveyVillage })
     } catch (error) {
