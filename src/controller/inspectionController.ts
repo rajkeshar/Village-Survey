@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import deptModal from '../modal/departmentModal';
 import surveyModal from '../modal/inspecionModal'
 import submitSurveyModal from '../modal/submitSurveyModal';
+import { getCountOfAllVillage } from './zoneController';
+import zoneModal from '../modal/zoneModal';
 
 export async function addNewSurvey(req: Request, res: Response) {
     try {
@@ -229,6 +231,7 @@ export async function getInspectionsDetails(req: Request, res: Response) {
                 }
             }
         ])
+        if(!result.length)  return res.status(400).json({ message: "There is no survey done till yet" })
         return res.status(201).json({ message: "inspection details fetched successfully", success: true, data: result })
     } catch (error) {
         console.log(error);
@@ -287,6 +290,26 @@ export async function getScoreBiseRank(req: Request, res: Response) {
           village.rank = rank;
         });
         return res.status(201).json({ message: "fetched successfully", success: true, data: villages })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function progressDetailofSurvey(req: Request, res: Response) {
+    try {
+        let surveyId = req.params.surveyId;
+        if (!surveyId) {
+            return res.status(400).json({ message: "SurveyId and deptId is required" })
+        }
+        let villageCount = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka.villages" },
+            { $count: "totalVillages" }
+        ]) as any
+        let villageUniqueIdCount = await submitSurveyModal.find({"surveyId" : new mongoose.Types.ObjectId(surveyId)}).distinct('villageUniqueId') as any;
+        let remaingsurveyVillage = villageCount - villageUniqueIdCount.length ;
+    
+        return res.status(201).json({ message: "Remaning Village From survey fetched successfully", success: true, data: remaingsurveyVillage })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
