@@ -14,7 +14,7 @@ router.post('/submitsurvey/:id', submitSurvey)
 router.post('/monthlySurveyCompleted/:mon', monthlySurveyCompleted)
 router.get('/isongoingsurveytrue', isOnGoingSurveyTrue)
 router.get('/inspectiondetails/:id/:email', getInspectionsDetails)
-router.get('/getrankbisescore/:surveyId/:deptId', getScoreBiseRank)
+router.get('/getrankbisescore/:surveyId', getScoreBiseRank)
 router.get('/getprogressdetailofsurvey/:surveyId', progressDetailofSurvey)
 
 
