@@ -242,15 +242,15 @@ export async function getInspectionsDetails(req: Request, res: Response) {
 export async function getScoreBiseRank(req: Request, res: Response) {
     try {
         let surveyId = req.params.surveyId;
-        let deptId = req.params.deptId;
-        if (!surveyId || !deptId) {
-            return res.status(400).json({ message: "SurveyId and deptId is required" })
+        // let deptId = req.params.deptId;
+        if (!surveyId ) {
+            return res.status(400).json({ message: "SurveyId  is required" })
         }
         let villages = await submitSurveyModal.aggregate([
             {
                 $match: {
-                    "surveyId":new mongoose.Types.ObjectId(surveyId),
-                    "surveyDetail.deptId": new mongoose.Types.ObjectId(deptId)
+                    "surveyId":new mongoose.Types.ObjectId(surveyId)
+                    // "surveyDetail.deptId": new mongoose.Types.ObjectId(deptId)
                 }
             },
             {
