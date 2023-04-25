@@ -239,7 +239,20 @@ export async function deleteScheme(req: Request, res: Response) {
         if (!dept) return res.status(400).send({ message: 'Dept id not found, Invalid Id' });
         let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) },
             { $pull: { 'schemeDetails': { 'schemeName': schemename } } })
-        res.send({ message: "scheme list fetched successfully", data: result });
+        res.send({ message: "scheme  deleted successfully", data: result });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+export async function deleteQuestion(req: Request, res: Response) {
+    let { id, schemeId, questionId } = req.params;
+    try {
+        const dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true , "schemeDetails.schemeId": schemeId }) as any
+        if (!dept) return res.status(400).send({ message: 'Dept id not found, Invalid Id' });
+        let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) ,"schemeDetails.schemeId": schemeId },
+        { $pull: { "schemeDetails.$.questionnaire": { _id: new mongoose.Types.ObjectId(questionId) } } })
+        res.send({ message: "question deleted  successfully", success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
