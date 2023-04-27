@@ -121,10 +121,12 @@ export async function getSurveyDateRange(req: Request, res: Response) {
 export async function submitSurvey(req: Request, res: Response) {
     try {
         let surveyId = req.params.id;
-        let { deptId, villageId, schemeDetails, surveyorLoginId, deptName, villageName } = req.body;
+        let {  villageId, deptDetails, surveyorLoginId,  villageName } = req.body;
         if (!surveyId) {
             return res.status(400).json({ message: "SurveyId is required" })
         }
+        const uniqueDeptIds = [...new Set(deptDetails.map((obj) => obj.deptId))];
+        const deptIdsAsObjectIds = uniqueDeptIds.map((id:any) => new mongoose.Types.ObjectId(id));
         let updatedSurvey = await surveyModal.findOneAndUpdate(
             {
                 _id: new mongoose.Types.ObjectId(surveyId),
@@ -136,38 +138,125 @@ export async function submitSurvey(req: Request, res: Response) {
                 },
                 $addToSet: {
                     villageUniqueIds: { $each: [villageId] },
-                    departmentIds: { $each: [new mongoose.Types.ObjectId(deptId)] }
+                    departmentIds: { $each: deptIdsAsObjectIds }
                 }
             }, { new: true }
         );
         if (!updatedSurvey) {
             return res.status(400).send({ message: "This Id is not found, Invalid ID" })
         }
-        let surveyDetails = {
-            deptId: new mongoose.Types.ObjectId(deptId),
-            deptName: deptName,
-            schemeDetails: schemeDetails.map(({ schemeId, schemeName, questionnaire }) => ({
-                schemeId,
-                schemeName,
-                questionnaire: questionnaire.map(({ question, questionID, score }) => ({
-                    question,
-                    questionID: new mongoose.Types.ObjectId(questionID),
-                    score,
-                })),
+        // let schemeDetails = {
+        //     deptId: new mongoose.Types.ObjectId(deptId),
+        //     deptName: deptName,
+        //     schemeDetails: schemeDetails.map(({ schemeId, schemeName, questionnaire }) => ({
+        //         schemeId,
+        //         schemeName,
+        //         questionnaire: questionnaire.map(({ question, questionID, score }) => ({
+        //             question,
+        //             questionID: new mongoose.Types.ObjectId(questionID),
+        //             score,
+        //         })),
+            // })),
+        // };
+        // let totalScore = schemeDetails?.reduce((acc, obj) => acc + obj.questionnaire[0].score, 0);
+        const transformedData = deptDetails.reduce((acc, item) => {
+            const existingDept = acc.find((d) => d.deptId === item.deptId);
+          
+            if (existingDept) {
+              const existingScheme = existingDept.schemeDetails.find(
+                (s) => s.schemeId === item.schemeId
+              );
+          
+              if (existingScheme) {
+                existingScheme.questionnaire.push({
+                  question: item.question,
+                  questionID: item.questionId,
+                  score: item.score,
+                });
+              } else {
+                existingDept.schemeDetails.push({
+                  schemeId: item.schemeId,
+                  schemeName: item.schemeName,
+                  questionnaire: [
+                    {
+                      question: item.question,
+                      questionID: item.questionId,
+                      score: item.score,
+                    },
+                  ],
+                });
+              }
+            } else {
+              acc.push({
+                deptId: item.deptId,
+                deptName: item.deptName,
+                schemeDetails: [
+                  {
+                    schemeId: item.schemeId,
+                    schemeName: item.schemeName,
+                    questionnaire: [
+                      {
+                        question: item.question,
+                        questionID: item.questionId,
+                        score: item.score,
+                      },
+                    ],
+                  },
+                ],
+              });
+            }
+          
+            return acc;
+          }, []);
+          
+          const finalData = transformedData.map((dept) => ({
+            deptId: new mongoose.Types.ObjectId(dept.deptId),
+            deptName: dept.deptName,
+            schemeDetails: dept.schemeDetails.map((scheme) => ({
+              schemeId: scheme.schemeId,
+              schemeName: scheme.schemeName,
+              questionnaire: scheme.questionnaire.map((question) => ({
+                question: question.question,
+                questionID: new mongoose.Types.ObjectId(question.questionID),
+                score: question.score,
+              })),
             })),
-        };
-        let totalScore = schemeDetails?.reduce((acc, obj) => acc + obj.questionnaire[0].score, 0);
-
-        let payload = {
+          }));
+        //   let totalScore = finalData.map((x) => {
+        //     if (x.schemeDetails?.length) {
+        //       return x.schemeDetails.reduce(
+        //         (acc, obj) => acc + obj.questionnaire[0].score,
+        //         0
+        //       );
+        //     } else {
+        //       return 0;
+        //     }
+        //   });
+        // let payload = {
+        //     surveyId: new mongoose.Types.ObjectId(surveyId),
+        //     email: surveyorLoginId,
+        //     villageUniqueId: villageId,
+        //     villageName: villageName,
+        //     schemeDetails: surveyDetails,
+        //     totalScore: totalScore
+        // };
+        const payload = finalData.map(obj => ({
+            // ...obj,
+            surveyDetail : {...obj},
             surveyId: new mongoose.Types.ObjectId(surveyId),
             email: surveyorLoginId,
             villageUniqueId: villageId,
             villageName: villageName,
-            surveyDetail: surveyDetails,
-            totalScore: totalScore
-        };
-        let scoring = new submitSurveyModal(payload)
-        scoring.save();
+            totalScore:  obj.schemeDetails?.reduce((acc, obj) => acc + obj.questionnaire[0].score, 0)
+          }));
+        //   let totalScore = payload.map((x) => {
+        //     return x.surveyDetail.schemeDetails?.reduce((acc, obj) => acc + obj.questionnaire[0].score, 0);
+        // });     
+        // const setObj = payload.map(obj => ({
+        //    ...obj,
+        //    totalScore : totalScore.forEach( (x) =>  x)
+        //   }));
+         let scoring = await submitSurveyModal.insertMany(payload);
         return res.status(201).json({ message: "survey submitted successfully", success: true, data: scoring })
     } catch (error) {
         console.log(error);
