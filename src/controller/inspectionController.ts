@@ -321,7 +321,7 @@ export async function getInspectionsDetails(req: Request, res: Response) {
                 }
             }
         ])
-        if(!result.length)  return res.status(400).json({ message: "There is no survey done till yet" })
+        if(!result.length)  return res.status(200).json({ message: "There is no survey done till yet" })
         return res.status(201).json({ message: "inspection details fetched successfully", success: true, data: result })
     } catch (error) {
         console.log(error);
