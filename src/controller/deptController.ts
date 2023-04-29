@@ -373,7 +373,7 @@ export async function disableDepartmentById(req: Request, res: Response) {
         let isExist = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
         if (!isExist) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
         //  const setQuery = { $addToSet: { "schemeDetails": { $each: [ schemeId , schemeName ]}}};
-        let result = await deptModal.findByIdAndUpdate( new mongoose.Types.ObjectId(id), { 'isDisbale': isDisable },{new : true});
+        let result = await deptModal.findByIdAndUpdate( new mongoose.Types.ObjectId(id), { 'isDisable': isDisable },{new : true});
         return res.status(201).send({ message: 'Successfully updated', data: result, success: true });
     } catch (error) {
         console.log(error);
