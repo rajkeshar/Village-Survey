@@ -146,7 +146,7 @@ export async function deleteZone(req: Request, res: Response) {
 export async function deleteBlockOrVillage(req: Request, res: Response) {
     try {
         let { id, block } = req.params;
-        let { blockName, villageUniqueId, blockUniqueId } = req.body;
+        let { talukaUniqueId, villageUniqueId, blockUniqueId } = req.body;
         let zone = await zoneModal.findOne({ _id: new mongoose.Types.ObjectId(id) })
         if (!zone) return res.status(400).send({ mesage: "This Id is not exist, Invalid ID" })
 
@@ -154,11 +154,14 @@ export async function deleteBlockOrVillage(req: Request, res: Response) {
             await zoneModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) },
                 { $pull: { 'blocks': { 'blockUniqueId': blockUniqueId } } })
         } else {
-            await zoneModal.findOneAndUpdate({
-                _id: new mongoose.Types.ObjectId(id),
-                "blocks": { $elemMatch: { "blockUniqueId": blockUniqueId } }
-            },
-                { $pull: { 'blocks.$.villages': { 'villageUniqueId': villageUniqueId } } })
+            await zoneModal.findOneAndUpdate(
+                {
+                    "_id": new mongoose.Types.ObjectId(id),
+                    'blocks.blockUniqueId': blockUniqueId, "blocks.taluka.talukaUniqueId": talukaUniqueId, "blocks.taluka.villages.villageUniqueId": villageUniqueId
+                },
+                { $pull: { 'blocks.$[block].taluka.villages': { villageUniqueId: villageUniqueId } } },
+                { arrayFilters: [{ 'block.blockUniqueId': blockUniqueId }] }
+            )
         }
         return res.status(201).send({ mesage: "Deleted successfully", success: true })
     } catch (error) {
@@ -492,27 +495,27 @@ export async function searchVillageName(req: Request, res: Response) {
         var regex = new RegExp(searchString);
         let result = await zoneModal.aggregate([
             // { $match: { "pincode": "123456" } },
-        {
-            $project: {
-                _id: 0, villages: {
-                    $filter: {
-                        input: {
-                            $reduce: {
-                                input: "$blocks",
-                                initialValue: [], in: { $concatArrays: ["$$value", "$$this.taluka.villages"] }
-                            }
-                        },
-                        as: "village",
-                        cond: {
-                            $regexMatch: {
-                                input: "$$village.villageName",
-                                regex: regex
+            {
+                $project: {
+                    _id: 0, villages: {
+                        $filter: {
+                            input: {
+                                $reduce: {
+                                    input: "$blocks",
+                                    initialValue: [], in: { $concatArrays: ["$$value", "$$this.taluka.villages"] }
+                                }
+                            },
+                            as: "village",
+                            cond: {
+                                $regexMatch: {
+                                    input: "$$village.villageName",
+                                    regex: regex
+                                }
                             }
                         }
                     }
                 }
             }
-        }
         ])
         return res.status(200).json({ message: `remaining villages.`, data: result, success: true });
     } catch (error) {

@@ -31,6 +31,10 @@ const deptSchema = new Schema({
     IsActive: {
         type: Boolean,
         default: true
+    },
+    isDisable :{
+        type : Boolean,
+        default : false
     }
 },
     { timestamps: true }
