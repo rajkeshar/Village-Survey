@@ -573,6 +573,52 @@ export async function getUserAssignedVillageAndDepartment(req: Request, res: Res
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+
+export async function  getSelectedVillageList(req: Request, res: Response) {
+    let { id } = req.params;
+
+    try {
+        let user:any = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true },{"AssignVillage":1,"AssignDepartments":1})
+        if (!user.length) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
+        let dist = await zoneModal.findOne({ IsActive: true });
+        if (!dist) return res.status(201).send({ message: "District Id or block Id is not found, Invalid ID" })
+        let villageArray = [] as any;
+        let result = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka.villages" },
+            {
+                $project: {
+                    _id: 1,
+                    districtName: 1,
+                    villageName: "$blocks.taluka.villages.villageName",
+                    villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
+                }
+            }])
+
+            let finalArray:any = []
+              console.log(user,"user")
+            result.map((vill:any)=>{
+                user[0].AssignVillage.villages.map((id)=>{
+                     if(id==vill.villageUniqueId)
+                     {
+                        finalArray.push(vill)
+                     }
+
+                })
+
+            })
+
+
+            console.log(finalArray.length,user[0].AssignVillage.villages.length)
+        return res.status(201).send({ message: 'Successfully fetched', data: finalArray, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+
+
+
+}
 export async function pullVillageFromSurveyor(req: Request, res: Response) {
     let { id } = req.params;
     let {villageIds} = req.body;
