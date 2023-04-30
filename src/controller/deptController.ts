@@ -366,3 +366,17 @@ export async function uploadSchemeData(req: any, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function disableDepartmentById(req: Request, res: Response) {
+    let { id } = req.params;
+    try {
+        let {isDisable } = req.body ;
+        let isExist = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
+        if (!isExist) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
+        //  const setQuery = { $addToSet: { "schemeDetails": { $each: [ schemeId , schemeName ]}}};
+        let result = await deptModal.findByIdAndUpdate( new mongoose.Types.ObjectId(id), { 'isDisable': isDisable },{new : true});
+        return res.status(201).send({ message: 'Successfully updated', data: result, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
