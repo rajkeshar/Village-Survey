@@ -233,12 +233,12 @@ export async function getQuestionnaireByDepartment(req: Request, res: Response) 
     }
 }
 export async function deleteScheme(req: Request, res: Response) {
-    let { id, schemename } = req.params;
+    let { id, schemeId } = req.params;
     try {
         const dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true }) as any
         if (!dept) return res.status(400).send({ message: 'Dept id not found, Invalid Id' });
         let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) },
-            { $pull: { 'schemeDetails': { 'schemeName': schemename } } })
+            { $pull: { 'schemeDetails': { 'schemeId': schemeId } } })
         res.send({ message: "scheme  deleted successfully", data: result });
     } catch (error) {
         console.log(error);
