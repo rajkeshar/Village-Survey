@@ -238,7 +238,7 @@ export async function deleteScheme(req: Request, res: Response) {
         const dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true }) as any
         if (!dept) return res.status(400).send({ message: 'Dept id not found, Invalid Id' });
         let result = await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) },
-            { $pull: { 'schemeDetails': { 'schemeName': schemeId } } })
+            { $pull: { 'schemeDetails': { 'schemeId': schemeId } } })
         res.send({ message: "scheme  deleted successfully", data: result });
     } catch (error) {
         console.log(error);
