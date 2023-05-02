@@ -47,17 +47,30 @@ export async function getNotificationList(req: Request, res: Response) {
 }
 export async function updateNotification(req: Request, res: Response) {
     try {
-        let { message, isPinned } = req.body
-        let { id } = req.params;
-        let notification = await notificationModal.findOne({_id:new mongoose.Types.ObjectId(id)});
-        if (!notification) return res.status(201).json({ message: "notification send successfully" })
-        let result = await notificationModal.findOneAndUpdate({_id:new mongoose.Types.ObjectId(id)}
-            ,{$set :{message : message,isPinned:isPinned}},
-            {new:true}
-            )
-        return res.status(201).json({ message: "notification send successfully", success: true, data: result });
+      const { message, isPinned } = req.body;
+      const { id } = req.params;
+  
+      // Find the current notification and update it
+      const currentNotification = await notificationModal.findOne({ _id: new mongoose.Types.ObjectId(id) });
+      if (!currentNotification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      const updatedNotification = await notificationModal.findOneAndUpdate(
+        { _id: new mongoose.Types.ObjectId(id) },
+        { $set: { message, isPinned } },
+        { new: true }
+      );
+      // If the updated notification is now pinned, update all other notifications to set isPinned to false
+      if (isPinned && updatedNotification) {
+        await notificationModal.updateMany(
+          { _id: { $ne: updatedNotification._id } },
+          { $set: { isPinned: false } }
+        );
+      }
+      return res.status(200).json({ message: "Notification updated successfully", data: updatedNotification });
     } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+      console.log(error);
+      return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false });
     }
-}
+  }
+  
