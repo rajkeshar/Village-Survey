@@ -494,29 +494,83 @@ export async function searchVillageName(req: Request, res: Response) {
         let searchString = req.params.searchquery;
         var regex = new RegExp(searchString);
         let result = await zoneModal.aggregate([
-            // { $match: { "pincode": "123456" } },
             {
-                $project: {
-                    _id: 0, villages: {
-                        $filter: {
-                            input: {
-                                $reduce: {
-                                    input: "$blocks",
-                                    initialValue: [], in: { $concatArrays: ["$$value", "$$this.taluka.villages"] }
+              $project: {
+                _id: 0,
+                blocks: {
+                  $filter: {
+                    input: "$blocks",
+                    as: "block",
+                    cond: {
+                      $or: [
+                        {
+                          $regexMatch: {
+                            input: "$$block.taluka.talukaName",
+                            regex: regex
+                          }
+                        },
+                        {
+                          $gt: [
+                            {
+                              $size: {
+                                $filter: {
+                                  input: "$$block.taluka.villages",
+                                  as: "village",
+                                  cond: {
+                                    $regexMatch: {
+                                      input: "$$village.villageName",
+                                      regex: regex
+                                    }
+                                  }
                                 }
+                              }
                             },
-                            as: "village",
-                            cond: {
-                                $regexMatch: {
-                                    input: "$$village.villageName",
-                                    regex: regex
-                                }
-                            }
+                            0
+                          ]
                         }
+                      ]
                     }
+                  }
                 }
+              }
+            },
+            {
+              $addFields: {
+                blocks: {
+                  $map: {
+                    input: "$blocks",
+                    as: "block",
+                    in: {
+                      $mergeObjects: [
+                        "$$block",
+                        {
+                          taluka: {
+                            $mergeObjects: [
+                              "$$block.taluka",
+                              {
+                                villages: {
+                                  $filter: {
+                                    input: "$$block.taluka.villages",
+                                    as: "village",
+                                    cond: {
+                                      $regexMatch: {
+                                        input: "$$village.villageName",
+                                        regex: regex
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
             }
-        ])
+          ]);
         return res.status(200).json({ message: `remaining villages.`, data: result, success: true });
     } catch (error) {
         console.log(error);
