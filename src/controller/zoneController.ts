@@ -571,7 +571,7 @@ export async function searchVillageName(req: Request, res: Response) {
               }
             }
           ]);
-        return res.status(200).json({ message: `remaining villages.`, data: result, success: true });
+        return res.status(200).json({ message: `Your  villages.`, data: result, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
