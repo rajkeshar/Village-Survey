@@ -6,6 +6,7 @@ import submitSurveyModal from '../modal/submitSurveyModal';
 import { getCountOfAllVillage } from './zoneController';
 import zoneModal from '../modal/zoneModal';
 import moment from 'moment';
+import userModal from '../modal/userModal';
 
 export async function addNewSurvey(req: Request, res: Response) {
     try {
@@ -297,13 +298,14 @@ export async function getInspectionsDetails(req: Request, res: Response) {
             return res.status(400).json({ message: "SurveyId is required" })
         }
         let result = await submitSurveyModal.aggregate([
-            { $match: { "surveyId": new mongoose.Types.ObjectId(surveyId),"email" : email } },
+            { $match: { "surveyId": new mongoose.Types.ObjectId(surveyId), "email": email } },
             {
                 $group: {
                     _id: {
                         villageName: "$villageName",
                         villageUniqueId: "$villageUniqueId",
-                        deptName: "$surveyDetail.deptName"
+                        deptName: "$surveyDetail.deptName",
+                        email: "$email"
                     },
                     totalScore: { $sum: "$totalScore" }
                 }
@@ -317,6 +319,7 @@ export async function getInspectionsDetails(req: Request, res: Response) {
                     villageUniqueId: "$_id.villageUniqueId",
                     villageName: "$_id.villageName",
                     deptName: "$_id.deptName",
+                    email: "$_id.email",
                     totalScore: 1
                 }
             }
@@ -408,10 +411,33 @@ export async function progressDetailofSurvey(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function getDashBoardDetail(req: Request, res: Response) {
+    try {
+        let surveyId = req.params.surveyId;
+        if (!surveyId) {
+            return res.status(400).json({ message: "SurveyId is required" })
+        }
+        const result = await submitSurveyModal.find({'surveyId' : new mongoose.Types.ObjectId(surveyId)}, {
+            villageName: 1,
+            villageUniqueId: 1,
+            email: 1,
+            'surveyDetail.deptName': 1,
+            totalScore: 1,
+            _id: 0
+          }).exec();
+      
+          if (result) {
+            // let email = await  userModal.find({ email : {$in :[ emails ]}})
+        }
+        return res.status(201).json({ message: "Remaning Village From survey fetched successfully", success: true, data: result })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
 async function getFirstDayOfMonth(month) {
     let year = new Date().getFullYear(); // get the current year
     let startdate = new Date(year, month - 1, 1); // set the year and month, and set the day to 1
     let enddate = new Date(year, month, 1); // set the year and month, and set the day to 1\
 
 }
-
