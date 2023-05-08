@@ -417,17 +417,20 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         if (!surveyId) {
             return res.status(400).json({ message: "SurveyId is required" })
         }
-        const result = await submitSurveyModal.find({'surveyId' : new mongoose.Types.ObjectId(surveyId)}, {
-            villageName: 1,
-            villageUniqueId: 1,
-            email: 1,
-            'surveyDetail.deptName': 1,
-            totalScore: 1,
-            _id: 0
-          }).exec();
-      
+        const result = await submitSurveyModal.find(
+            { surveyId: new mongoose.Types.ObjectId(surveyId) }, // query criteria
+            { 
+              villageName: 1,
+              villageUniqueId: 1,
+              email: 1,
+              'surveyDetail.deptName': 1,
+              totalScore: 1,
+              _id: 1
+            }
+          );
+          
           if (result) {
-            // let email = await  userModal.find({ email : {$in :[ emails ]}})
+            // let userList = await  userModal.find({ email : {$in :[ result ]}})
         }
         return res.status(201).json({ message: "Remaning Village From survey fetched successfully", success: true, data: result })
     } catch (error) {
@@ -435,9 +438,71 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+export async function getHighScoreVillage(req:Request, res:Response) {
+    const {surveyId} = req.params;
+    
+   // Check if survey has been done in all villages
+   const totalVillages = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka.villages" },
+            { $count: "totalVillages" }
+        ]) as any
+   const surveyedVillages = await submitSurveyModal.distinct("villageUniqueId", {"surveyId": new mongoose.Types.ObjectId(surveyId)});
+   if (totalVillages[0]?.totalVillages !== surveyedVillages.length) {
+     return {
+       message: 'Survey is not complete in all villages',
+     };
+   }
+ 
+   // Check if all departments have been surveyed
+   const totalDepts = await deptModal.countDocuments({});
+   const surveyedDepts = await submitSurveyModal.find({'surveyId':new mongoose.Types.ObjectId(surveyId)}).distinct('surveyDetail.deptId');
+   if (totalDepts !== surveyedDepts.length) {
+     return {
+       message: 'All departments have not been surveyed yet',
+     };
+   }
+ 
+   // Get the total score for each village
+   const villageScores = await submitSurveyModal.aggregate([
+    {$match :{ surveyId : new mongoose.Types.ObjectId(surveyId)}},
+     {
+       $group: {
+         _id: '$villageUniqueId',
+         totalScore: { $sum: '$totalScore' },
+         surveysCompleted: { $sum: 1 },
+       },
+     },
+   ]);
+ 
+   // Sort the villages by total score
+   const sortedVillages = villageScores.sort((a, b) => b.totalScore - a.totalScore);
+ 
+   // Calculate the median score for all villages
+   const medianScore = calculateMedianScore(villageScores.map((v) => v.totalScore));
+ 
+   // Get the highest, lowest, and median scoring villages
+   const highestScoringVillage = sortedVillages[0];
+   const lowestScoringVillage = sortedVillages[sortedVillages.length - 1];
+   const medianScoringVillage = villageScores.find((v) => v.totalScore === medianScore);
+ 
+   return {
+     highestScoringVillage,
+     lowestScoringVillage,
+     medianScoringVillage,
+   };
+  }
 async function getFirstDayOfMonth(month) {
     let year = new Date().getFullYear(); // get the current year
     let startdate = new Date(year, month - 1, 1); // set the year and month, and set the day to 1
     let enddate = new Date(year, month, 1); // set the year and month, and set the day to 1\
 
 }
+function calculateMedianScore(scores) {
+    const sortedScores = scores.sort((a, b) => a - b);
+    const middle = Math.floor(sortedScores.length / 2);
+    if (sortedScores.length % 2 === 0) {
+      return (sortedScores[middle - 1] + sortedScores[middle]) / 2;
+    }
+    return sortedScores[middle];
+  }

@@ -72,5 +72,19 @@ export async function updateNotification(req: Request, res: Response) {
       console.log(error);
       return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false });
     }
+}
+export async function getPinnedNotification(req: Request, res: Response) {
+  try {
+    const pinnedNotification = await notificationModal.findOne({ isPinned: true });
+
+    if (!pinnedNotification) {
+      return res.status(200).json({ message: "Pinned Notification not found" });
+    }
+   
+    return res.status(201).json({ message: "Notification updated successfully", data: pinnedNotification,success: true });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false });
   }
+}
   
