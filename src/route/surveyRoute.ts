@@ -1,5 +1,5 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
-import { addNewSurvey,isOnGoingSurveyTrue,progressDetailofSurvey, changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey, submitSurvey, monthlySurveyCompleted, getInspectionsDetails, getScoreBiseRank, getDashBoardDetail } from '../controller/inspectionController';
+import { addNewSurvey,isOnGoingSurveyTrue,progressDetailofSurvey, changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey, submitSurvey, monthlySurveyCompleted, getInspectionsDetails, getScoreBiseRank, getDashBoardDetail, getHighScoreVillage } from '../controller/inspectionController';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
 
@@ -17,6 +17,7 @@ router.get('/inspectiondetails/:id/:email', getInspectionsDetails)
 router.get('/getrankbisescore/:surveyId', getScoreBiseRank)
 router.get('/getprogressdetailofsurvey/:surveyId', progressDetailofSurvey)
 router.get('/getdashboarddetail/:surveyId', getDashBoardDetail)
+router.get('/gethighscore/:surveyId', getHighScoreVillage)
 
 
 export default router;
