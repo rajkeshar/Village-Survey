@@ -143,27 +143,58 @@ export async function submitSurvey(req: Request, res: Response) {
 
             // check that survey for same village and deptid should not repeated
             const existingSurvey = await submitSurveyModal.findOne(
-                {  $or: [
-                    { 'villageUniqueId': villageId }, { 'surveyDetail.deptId': { $in: deptIdsAsObjectIds } } 
-                ]});
+                {
+                    $and: [
+                        { 'villageUniqueId': villageId }, { 'surveyDetail.deptId': { $in: deptIdsAsObjectIds } }
+                    ]
+                });
 
-            if (existingSurvey)  { return res.status(400).json({message :`A survey for village and department  has already been saved.`,data:villageId})};
-        
+            if (existingSurvey) { return res.status(400).json({ message: `A survey for village and department  has already been saved.`, data: villageId }) };
+
             // continue saving the survey
 
             if (isAssignedToVillage && isAssignedToDept) {
-                // save survey
-                let updatedSurvey = await surveyModal.findOneAndUpdate(
+            
+                //village already exist in the survey(survey happend for that village before)
+                const alreadyExistVilage = await surveyModal.findOneAndUpdate(
                     {
                         _id: new mongoose.Types.ObjectId(surveyId),
+                        'villageUniqueIds.villageId': villageId,
                         IsOnGoingSurvey: "OnGoing"
-                    },{  $addToSet: {
-                            villageUniqueIds: { $each: [villageId] },
-                            departmentIds: { $each: deptIdsAsObjectIds }}
-                    }, { new: true });
-                if (!updatedSurvey) {
-                    return res.status(400).send({ message: "This Id is not found, Invalid ID" })
+                    },
+                    {
+                        $addToSet: {
+                            'villageUniqueIds.$.departmentIds':
+                                { $each: deptIdsAsObjectIds }
+                        }
+                    }, { new: true })
+                //village not exist in the survey
+                if (!alreadyExistVilage) {
+                    let updatedSurvey = await surveyModal.findOneAndUpdate(
+                        {
+                            _id: new mongoose.Types.ObjectId(surveyId),
+                            IsOnGoingSurvey: "OnGoing"
+                        },
+                        {
+                            $push: {
+                                villageUniqueIds:
+                                {
+                                    villageId: villageId,
+                                    departmentIds: deptIdsAsObjectIds
+                                }
+                            }
+                        }, { new: true });
+                    if (!updatedSurvey) {
+                        return res.status(400).send({ message: "This Id is not found, Invalid ID" })
+                    }
                 }
+
+                // {  $addToSet: {
+                //         villageUniqueIds: { $each: [villageId] },
+                //         departmentIds: { $each: deptIdsAsObjectIds }}
+                // }
+
+
                 // let schemeDetails = {
                 //     deptId: new mongoose.Types.ObjectId(deptId),
                 //     deptName: deptName,
@@ -276,6 +307,29 @@ export async function submitSurvey(req: Request, res: Response) {
                 //    totalScore : totalScore.forEach( (x) =>  x)
                 //   }));
                 let scoring = await submitSurveyModal.insertMany(payload);
+                if(scoring.length){
+                    let highestScore = await submitSurveyModal.aggregate([
+                        // Match documents with villageUniqueId of "DEO04BOR04"
+                        { $match: { villageUniqueId: villageId } },
+                        
+                        // Project only the totalScore field
+                        { $project: { totalScore: 1 } },
+                        
+                        // Group all documents and sum the totalScore field
+                        { $group: { _id: null, totalScore: { $sum: "$totalScore" } } }
+                    ]);
+                    await surveyModal.findOneAndUpdate(
+                        {
+                            _id: new mongoose.Types.ObjectId(surveyId),
+                            'villageUniqueIds.villageId': villageId,
+                            IsOnGoingSurvey: "OnGoing"
+                        },
+                        {
+                            $set: {
+                                'villageUniqueIds.$.highestScore': highestScore[0]?.totalScore
+                            }
+                        }, { new: true })
+                }
                 return res.status(201).json({ message: "survey submitted successfully", success: true, data: scoring })
             } else {
                 // user not authorized to save survey for this village and department
