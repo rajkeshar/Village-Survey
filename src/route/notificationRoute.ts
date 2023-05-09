@@ -1,6 +1,6 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
 import { createConnection } from 'mongoose';
-import { addNotification, deleteNotificationById, getNotificationById, getNotificationList, updateNotification } from '../controller/notificationController';
+import { addNotification, deleteNotificationById, getNotificationById, getNotificationList, getPinnedNotification, updateNotification } from '../controller/notificationController';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
 
@@ -9,5 +9,6 @@ router.get('/getnotificationbyid/:id', getNotificationById)
 router.delete('/deletenotificationbyid/:id', deleteNotificationById)
 router.get('/getallnotification', getNotificationList)
 router.post('/updatenotification/:id', updateNotification)
+router.get('/pinnednotification', getPinnedNotification)
 
 export default router;

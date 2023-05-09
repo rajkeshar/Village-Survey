@@ -1,16 +1,24 @@
 import mongoose, { Schema } from 'mongoose'
 
 const surveySchema = new Schema({
-    surveyName:{
-        type :String,
-        required : true
-    },
-    surveyorLoginId:{
-        type :String
-    },
-    villageUniqueIds:{
-        type :[String]
-    },
+    // surveyName:{
+    //     type :String,
+    //     required : true
+    // },
+    // surveyorLoginId:{
+    //     type :String
+    // },
+    villageUniqueIds:[{
+        villageId:{
+            type : String
+        },
+        highestScore:{
+            type : Number
+        },
+        departmentIds:{
+            type :[mongoose.Schema.Types.ObjectId]
+        },
+    }],
     departmentIds:{
         type :[mongoose.Schema.Types.ObjectId]
     },
