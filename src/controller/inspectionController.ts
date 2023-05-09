@@ -10,16 +10,16 @@ import userModal from '../modal/userModal';
 
 export async function addNewSurvey(req: Request, res: Response) {
     try {
-        let { surveyName, surveyStartDate, surveyEndDate, surveyorName } = req.body
+        let { surveyName, surveyStartDate, surveyEndDate } = req.body
 
-        if (!surveyName) return res.status(400).json({ message: "PLease send required field" });
+        if (!surveyName) return res.status(400).json({ message: "Please send required field" });
         let existingSurvey = await surveyModal.findOne({ surveyName: surveyName, 'IsActive': true }) as any
         if (existingSurvey) return res.status(400).json({ message: "survey  modal already exist" });
         let newSurvey = new surveyModal({
             surveyName: surveyName,
             surveyStartDate: surveyStartDate,
             surveyEndDate: surveyEndDate,
-            surveyorName: surveyorName
+            // surveyorName: surveyorName  //remove this feild from surveyModal
         });
         await newSurvey.save();
         let a = new submitSurveyModal({ surveyId: new mongoose.Types.ObjectId(newSurvey._id) });
