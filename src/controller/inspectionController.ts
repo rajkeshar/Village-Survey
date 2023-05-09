@@ -472,20 +472,20 @@ export async function getHighScoreVillage(req: Request, res: Response) {
         { $count: "totalVillages" }
     ]) as any
     const surveyedVillages = await submitSurveyModal.distinct("villageUniqueId", { "surveyId": new mongoose.Types.ObjectId(surveyId) });
-    // if (totalVillages[0]?.totalVillages !== surveyedVillages.length) {
-    //     return res.status(400).json({
-    //         message: 'Survey is not complete in all villages',
-    //     });
-    // }
+    if (totalVillages[0]?.totalVillages !== surveyedVillages.length) {
+        return res.status(400).json({
+            message: 'Survey is not complete in all villages',
+        });
+    }
 
     // Check if all departments have been surveyed
     const totalDepts = await deptModal.countDocuments({});
     const surveyedDepts = await submitSurveyModal.find({ 'surveyId': new mongoose.Types.ObjectId(surveyId) }).distinct('surveyDetail.deptId');
-    // if (totalDepts !== surveyedDepts.length) {
-    //     return res.status(400).json({
-    //         message: 'All departments have not been surveyed yet',
-    //     });
-    // }
+    if (totalDepts !== surveyedDepts.length) {
+        return res.status(400).json({
+            message: 'All departments have not been surveyed yet',
+        });
+    }
 
     // Get the total score for each village
     const villageScores = await submitSurveyModal.aggregate([
