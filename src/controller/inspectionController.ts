@@ -542,16 +542,27 @@ export async function getHighScoreVillage(req: Request, res: Response) {
     }
 
     // Get the total score for each village
-    const villageScores = await submitSurveyModal.aggregate([
-        { $match: { surveyId: new mongoose.Types.ObjectId(surveyId) } },
+    const villageScores = await surveyModal.aggregate([
         {
-            $group: {
-                _id: '$villageUniqueId',
-                totalScore: { $sum: '$totalScore' },
-                surveysCompleted: { $sum: 1 },
-            },
+          $unwind: "$villageUniqueIds"
         },
-    ]);
+        {
+          $sort: {
+            "villageUniqueIds.highestScore": -1
+          }
+        },
+        {
+          $limit: 1
+        },
+        {
+          $project: {
+            _id: 0,
+            villageId: "$villageUniqueIds.villageId",
+            highestScore: "$villageUniqueIds.highestScore"
+          }
+        }
+      ]);
+      
 
     // Sort the villages by total score
     const sortedVillages = villageScores.sort((a, b) => b.totalScore - a.totalScore);
