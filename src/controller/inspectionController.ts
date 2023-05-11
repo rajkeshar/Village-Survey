@@ -7,6 +7,7 @@ import { getCountOfAllVillage } from './zoneController';
 import zoneModal from '../modal/zoneModal';
 import moment from 'moment';
 import userModal from '../modal/userModal';
+import axios from 'axios';
 
 export async function addNewSurvey(req: Request, res: Response) {
     try {
@@ -330,6 +331,7 @@ export async function submitSurvey(req: Request, res: Response) {
                             }
                         }, { new: true })
                 }
+                let message = await surveySubmitSuccessfullyMessageSendToInspector(surveyorLoginId,user.contactNumber,villageId);
                 return res.status(201).json({ message: "survey submitted successfully", success: true, data: scoring })
             } else {
                 // user not authorized to save survey for this village and department
@@ -341,6 +343,18 @@ export async function submitSurvey(req: Request, res: Response) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
+}
+async function surveySubmitSuccessfullyMessageSendToInspector(email:string,newPhoneNumber,villageId:any) {
+    const message = `Hi User, you have Done the Survey for {#villageId#} on {#var#} successfully. Check the pending survey if any. Nectere Solutions`
+        const apiUrl = `https:webpostservice.com/sendsms_v2.0/sendsms.php?apikey=${process.env.apikey}&type=${process.env.TYPE}&sender=${process.env.sender}&mobile=${newPhoneNumber}&message=${message}&peId=${process.env.PEID}&tempId=${process.env.TEMPID}&username=${process.env.username}&password=${process.env.password}`; // Replace with the API endpoint URL
+
+        axios.get(apiUrl)
+            .then(response => {
+                console.log(response.data);
+                return response.data
+            }).catch(error => {
+                console.error(error);
+            });      
 }
 export async function monthlySurveyCompleted(req: Request, res: Response) {
     try {
@@ -495,20 +509,67 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         if (!surveyId) {
             return res.status(400).json({ message: "SurveyId is required" })
         }
-        const result = await submitSurveyModal.find(
-            { surveyId: new mongoose.Types.ObjectId(surveyId) }, // query criteria
-            {
-                villageName: 1,
-                villageUniqueId: 1,
-                email: 1,
-                'surveyDetail.deptName': 1,
-                totalScore: 1,
-                _id: 1
-            }
-        );
-        const emails = result.map(item => item.email);
+        const result = await submitSurveyModal.find({ surveyId: new mongoose.Types.ObjectId(surveyId) })
+        const emails = result.map(item => item.email).filter((value, index, self) => self.indexOf(value) === index);
         if (result) {
-            let userList = await userModal.find({ email: { $in: emails } })
+            let userList = await userModal.find({ email: { $in: emails } },{AssignVillage : 1 ,AssignDepartments: 1 ,fullname : 1});
+            // console.log(userList);
+            let villageIds = [] as any;
+
+        // extract all village ids from userList
+        userList.forEach(user => {
+            villageIds.push({'email' : user.email})
+        if (user.AssignVillage && user.AssignVillage.villages && user.AssignVillage.villages.length > 0) {
+            user.AssignVillage.villages.forEach((village:any) => {
+            if (village) {
+                villageIds.push({'villageUniqueId':village});
+            }
+            });
+        }
+        });
+            //fetchvillageName from villageId and fetch department name from departmentId
+            // query zoneModal to get village names based on villageIds
+        let villageNames = await zoneModal.aggregate([
+            {
+            $unwind: "$blocks"
+            },
+            {
+            $unwind: "$blocks.taluka.villages"
+            },
+            {
+            $match: {
+                "blocks.taluka.villages.villageUniqueId": {
+                $in: villageIds
+                }
+            }
+            },
+            {
+            $group: {
+                _id: "$blocks.taluka.villages.villageUniqueId",
+                villageName: {
+                $first: "$blocks.taluka.villages.villageName"
+                }
+            }
+            }
+        ]);
+        // create a dictionary of village names with village unique IDs as keys
+        let villageNameDict = {};
+        villageNames.forEach(village => {
+        villageNameDict[village._id] = village.villageName;
+        });
+
+        // update userList with village names
+        userList.forEach(user => {
+        if (user.AssignVillage && user.AssignVillage.villages && user.AssignVillage.villages.length > 0) {
+            user.AssignVillage.villages.forEach(village => {
+            if (village) {
+                village.villageName = villageNameDict[village.villageUniqueId];
+            }
+            });
+        }
+        });
+            //assignVillage distincet value and fetch highestScore 
+            //
         }
         return res.status(201).json({ message: "Remaning Village From survey fetched successfully", success: true, data: result })
     } catch (error) {
