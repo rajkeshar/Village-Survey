@@ -253,7 +253,7 @@ export async function deleteUser(req: Request, res: Response) {
         if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
         const filter = { _id: new mongoose.Types.ObjectId(id) };
         await userModal.findOneAndUpdate(filter, update)
-        res.status(200).json({ message: `User deleted successfully.` })
+        res.status(201).json({ message: `User deleted successfully.` })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -262,7 +262,7 @@ export async function deleteUser(req: Request, res: Response) {
 export async function getAllUser(req: Request, res: Response) {
     try {
         let userList = await userModal.find({ IsActive: true })
-        return res.status(200).json({ message: `User list successfully.`, data: userList })
+        return res.status(201).json({ message: `User list successfully.`, data: userList })
 
     } catch (error) {
         console.log(error);
@@ -280,7 +280,7 @@ export async function updateUser(req: Request, res: Response) {
 
         const payload = req.body;
         let result = await userModal.findByIdAndUpdate(filter, payload, { new: true })
-        res.status(200).json({ message: `User updated successfully.`, data: result });
+        res.status(201).json({ message: `User updated successfully.`, data: result });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -380,7 +380,7 @@ export async function forgetPassword(req: Request, res: Response) {
 //             const secret = jwtkey + user.password;
 //             try {
 //                 const payload = jwt.verify(token, secret)
-//                 return res.status(200).json({ message: 'reset password', email: user.email ,sucess:true});
+//                 return res.status(201).json({ message: 'reset password', email: user.email ,sucess:true});
 //             } catch (error) {
 //                 console.log(error);
 //                 res.send(error);
@@ -395,7 +395,7 @@ export async function getUserById(req: Request, res: Response) {
     try {
         let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(req.params?.id), IsActive: true });
         if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
-        return res.status(200).json({ message: `User fetched successfully.`, data: existUser, success: true });
+        return res.status(201).json({ message: `User fetched successfully.`, data: existUser, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -406,8 +406,9 @@ export async function makeInspectoreProfile(req: Request, res: Response) {
         let { id } = req.params;
         let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(id), IsActive: true });
         if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
+        if((existUser.role != 'VillageManager')) return res.status(400).json({ message: `Only VillageManager or superadmin can do the survey` });
         let result = await userModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id), IsActive: true },{$set : { isInspector : true}},{new : true});
-        return res.status(200).json({ message: `User updated successfully.`, data: result, success: true });
+        return res.status(201).json({ message: `User updated successfully.`, data: result, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -442,7 +443,7 @@ export async function villageAssignmentForSurveyor(req: Request, res: Response) 
         //         { $addToSet: { "blocks.$[block].taluka.villages.$[village].departments": { $each: deptIds } } },
         //         { arrayFilters: [{ "block.blockUniqueId": blockUniqueId }, { "village.villageUniqueId": uniqId }] })
         // }
-        return res.status(200).json({ message: `village assign successfully.`, data: result, success: true });
+        return res.status(201).json({ message: `village assign successfully.`, data: result, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -486,7 +487,7 @@ export async function departmentAssignmentForSurveyor(req: Request, res: Respons
         //     // await zoneModal.findOneAndUpdate({"blocks.taluka.villages.villageUniqueId" : villageUniqueId },
         //     // { $addToSet: { "departments": { $each: deptIds } } })
         // }
-        return res.status(200).json({ message: `dept assign successfully.`, data: userData, success: true });
+        return res.status(201).json({ message: `dept assign successfully.`, data: userData, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -506,7 +507,7 @@ export async function checkVillageArray(req: Request, res: Response) {
             return res.status(400).json({ message: `Some Villages is left , Do you still wanna continue`});
         }
        
-        return res.status(200).json({ message: `dept assign successfully.`, data: totalCountFromUserCollection, success: true });
+        return res.status(201).json({ message: `dept assign successfully.`, data: totalCountFromUserCollection, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
@@ -557,7 +558,7 @@ export async function checkDuplicateDeparmentAssignInVillage(req: Request, res: 
                 }
             }
         });
-        return res.status(200).json({ message: `dept assign successfully.`,  success: true });
+        return res.status(201).json({ message: `dept assign successfully.`,  success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
