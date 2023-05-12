@@ -518,14 +518,14 @@ export async function getDashBoardDetail(req: Request, res: Response) {
             const dashBoardData = [] as any;
             users?.forEach((user: any) => {
                 const villages = user?.AssignVillage?.villages ?? [];
-                villageIds.push(...villages);                
+                villageIds.push(...villages);
                 departmentIds.push(...user?.AssignDepartments?.departments ?? []);
                 dashBoardData.push({
-                'departments':user?.AssignDepartments?.departments ?? [],
-                'village':user?.AssignVillage?.villages ?? [],
-                'email':user?.email ?? '',
-                'fullName':user?.fullname ?? ''
-            });
+                    'departments': user?.AssignDepartments?.departments ?? [],
+                    'village': user?.AssignVillage?.villages ?? [],
+                    'email': user?.email ?? '',
+                    'fullName': user?.fullname ?? ''
+                });
             });
 
             const villageNames = await zoneModal.aggregate([
@@ -541,20 +541,6 @@ export async function getDashBoardDetail(req: Request, res: Response) {
             ]) as any;
             const villageMap = {} as any;
             const villageData = villageNames.filter(village => villageIds.includes(village.villageUniqueId));
-            // const mergedData = dashBoardData.map((data: any) => {
-            //     const villages = data.village.map((villageId: any) => {
-            //       const village = villageData.find(v => v.villageUniqueId === villageId.village);
-            //       return {
-            //         ...villageId,
-            //         villageName: village?.villageName ?? ''
-            //       };
-            //     });
-            //     return {
-            //       ...data,
-            //       village: villages
-            //     };
-            //   });
-              
 
             const departmentNames = await deptModal.find({ _id: { $in: departmentIds } }) as any
             const departmentMap = {} as any;
@@ -564,57 +550,57 @@ export async function getDashBoardDetail(req: Request, res: Response) {
             const dashboardWithNames = dashBoardData.map((data: any) => {
                 const departmentsWithNames = data.departments.map((id: any) => departmentMap[id]);
                 const villagesWithNames = data.village.map((villageId: any) => {
-                  const village = villageData.find((v: any) => v.villageUniqueId === villageId);
-                  return {
-                    villageUniqueId: villageId,
-                    villageName: village ? village.villageName : ''
-                  }
+                    const village = villageData.find((v: any) => v.villageUniqueId === villageId);
+                    return {
+                        villageUniqueId: villageId,
+                        villageName: village ? village.villageName : ''
+                    }
                 });
                 return {
-                  departments: departmentsWithNames,
-                  village: villagesWithNames,
-                  email: data.email,
-                  fullname: data.fullName,
+                    departments: departmentsWithNames,
+                    village: villagesWithNames,
+                    email: data.email,
+                    fullname: data.fullName,
                 }
-              });
+            });
             const surveyData = await surveyModal.find({ 'villageUniqueIds.villageId': { $in: villageIds } }, { 'villageUniqueIds.villageId': 1, 'villageUniqueIds.highestScore': 1, 'villageUniqueIds.departmentIds': 1 });
 
             const dashboardWithNamesAndRank = dashboardWithNames.map((data: any) => {
-            const departmentsWithNames = data.departments; let highestScore = '';
-            const villagesWithRankAndNames = data.village.map((village: any) => {
-                const survey = surveyData.find((s: any) => s.villageUniqueIds.find((v:any) => v.villageId === village.villageUniqueId)) as any;
+                const departmentsWithNames = data.departments; let highestScore = '';
+                const villagesWithRankAndNames = data.village.map((village: any) => {
+                    const survey = surveyData.find((s: any) => s.villageUniqueIds.find((v: any) => v.villageId === village.villageUniqueId)) as any;
 
-            let highestScore = '';
-            if (survey) {
-            const vData = survey.villageUniqueIds.find((v: any) => v.villageId === village.villageUniqueId);
-            if (vData) {
-                highestScore = vData.highestScore;
-            }
-            }
+                    let highestScore = '';
+                    if (survey) {
+                        const vData = survey.villageUniqueIds.find((v: any) => v.villageId === village.villageUniqueId);
+                        if (vData) {
+                            highestScore = vData.highestScore;
+                        }
+                    }
 
-            return {
-            ...village,
-            highestScore: highestScore,
-            rank: survey ? (highestScore === '' ? '' : getRank(surveyData, village.villageUniqueId)) : ''
-            // rank: survey ? (survey.villageUniqueIds.highestScore === '' ? '' : getRank(surveyData, survey.villageUniqueIds.villageId)) : ''
-            };
-            });
-            return {
-                departments: departmentsWithNames,
-                village: villagesWithRankAndNames,
-                email: data.email,
-                fullname: data.fullname,
-            };
+                    return {
+                        ...village,
+                        highestScore: highestScore,
+                        rank: survey ? (highestScore === '' ? '' : getRank(surveyData, village.villageUniqueId)) : ''
+                        // rank: survey ? (survey.villageUniqueIds.highestScore === '' ? '' : getRank(surveyData, survey.villageUniqueIds.villageId)) : ''
+                    };
+                });
+                return {
+                    departments: departmentsWithNames,
+                    village: villagesWithRankAndNames,
+                    email: data.email,
+                    fullname: data.fullname,
+                };
             });
 
             function getRank(surveyData: any, villageId: string) {
-            const sortedSurveyData = surveyData
-                .filter((s: any) => s.villageUniqueIds.highestScore !== '')
-                .sort((a: any, b: any) => b.villageUniqueIds.highestScore - a.villageUniqueIds.highestScore);
-            const rank = sortedSurveyData.findIndex((s: any) => s.villageUniqueIds.villageId === villageId) + 1;
-            return rank > 0 ? rank : '';
+                const sortedSurveyData = surveyData
+                    .filter((s: any) => s.villageUniqueIds.highestScore !== '')
+                    .sort((a: any, b: any) => b.villageUniqueIds.highestScore - a.villageUniqueIds.highestScore);
+                const rank = sortedSurveyData.findIndex((s: any) => s.villageUniqueIds.villageId === villageId) + 1;
+                return rank > 0 ? rank : '';
             }
-            return res.status(201).json({message : 'Dashboard details send successfully',data: dashboardWithNamesAndRank , success : true})
+            return res.status(201).json({ message: 'Dashboard details send successfully', data: dashboardWithNamesAndRank, success: true })
         }
         return res.status(201).json({ message: "cant find details", success: true, data: result })
     } catch (error) {
@@ -624,68 +610,76 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 }
 export async function getHighScoreVillage(req: Request, res: Response) {
     const { surveyId } = req.params;
-
-    // Check if survey has been done in all villages
-    const totalVillages = await zoneModal.aggregate([
-        { $unwind: "$blocks" },
-        { $unwind: "$blocks.taluka.villages" },
-        { $count: "totalVillages" }
-    ]) as any
-    const surveyedVillages = await submitSurveyModal.distinct("villageUniqueId", { "surveyId": new mongoose.Types.ObjectId(surveyId) });
-    if (totalVillages[0]?.totalVillages !== surveyedVillages.length) {
-        return res.status(400).json({
-            message: 'Survey is not complete in all villages',
-        });
-    }
-
-    // Check if all departments have been surveyed
-    const totalDepts = await deptModal.countDocuments({});
-    const surveyedDepts = await submitSurveyModal.find({ 'surveyId': new mongoose.Types.ObjectId(surveyId) }).distinct('surveyDetail.deptId');
-    if (totalDepts !== surveyedDepts.length) {
-        return res.status(400).json({
-            message: 'All departments have not been surveyed yet',
-        });
-    }
-
-    // Get the total score for each village
-    const villageScores = await surveyModal.aggregate([
-        {
-            $unwind: "$villageUniqueIds"
-        },
-        {
-            $sort: {
-                "villageUniqueIds.highestScore": -1
-            }
-        },
-        {
-            $limit: 1
-        },
-        {
-            $project: {
-                _id: 0,
-                villageId: "$villageUniqueIds.villageId",
-                highestScore: "$villageUniqueIds.highestScore"
-            }
+    try {
+        // Check if survey has been done in all villages
+        const totalVillages = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka.villages" },
+            { $count: "totalVillages" }
+        ]) as any
+        const surveyedVillages = await submitSurveyModal.distinct("villageUniqueId", { "surveyId": new mongoose.Types.ObjectId(surveyId) });
+        if (totalVillages[0]?.totalVillages !== surveyedVillages.length) {
+            return res.status(400).json({
+                message: 'Survey is not complete in all villages',
+            });
         }
-    ]);
 
+        // Check if all departments have been surveyed
+        const totalDepts = await deptModal.countDocuments({});
+        const surveyedDepts = await submitSurveyModal.find({ 'surveyId': new mongoose.Types.ObjectId(surveyId) }).distinct('surveyDetail.deptId');
+        if (totalDepts !== surveyedDepts.length) {
+            return res.status(400).json({
+                message: 'All departments have not been surveyed yet',
+            });
+        }
 
-    // Sort the villages by total score
-    const sortedVillages = villageScores.sort((a, b) => b.totalScore - a.totalScore);
+        // Get the total score for each village
+        const result = await surveyModal.aggregate([
+            {
+                $match: { _id: new mongoose.Types.ObjectId(surveyId) }
+            },
+            {
+                $unwind: "$villageUniqueIds"
+            },
+            {
+                $sort: {
+                    "villageUniqueIds.highestScore": -1
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    maxScore: { $max: "$villageUniqueIds.highestScore" },
+                    minScore: { $min: "$villageUniqueIds.highestScore" },
+                    count: { $sum: 1 },
+                    villages: { $push: { villageId: "$villageUniqueIds.villageId", highestScore: "$villageUniqueIds.highestScore" } }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    maxScore: 1,
+                    minScore: 1,
+                    midScore: { $arrayElemAt: ["$villages.highestScore", { $floor: { $divide: ["$count", 2] } }] },
+                    highestScoringVillage: {
+                        villageId: { $arrayElemAt: ["$villages.villageId", 0] },
+                        highestScore: { $arrayElemAt: ["$villages.highestScore", 0] }
+                    },
+                    lowestScoringVillage: {
+                        villageId: { $arrayElemAt: ["$villages.villageId", -1] },
+                        highestScore: { $arrayElemAt: ["$villages.highestScore", -1] }
+                    }, midScoringVillage: {
+                        $arrayElemAt: ["$villages.villageId", { $floor: { $divide: ["$count", 2] } }]
+                    }
+                }
+            }
+        ]);
+        return res.status(400).json({ message: 'fetched villages record as per score', data: result, success: true });
 
-    // Calculate the median score for all villages
-    const medianScore = calculateMedianScore(villageScores.map((v) => v.totalScore));
-
-    // Get the highest, lowest, and median scoring villages
-    const highestScoringVillage = sortedVillages[0];
-    const lowestScoringVillage = sortedVillages[sortedVillages.length - 1];
-    const medianScoringVillage = villageScores.find((v) => v.totalScore === medianScore);
-
-    return res.status(400).json({
-        highestScoringVillage,
-        lowestScoringVillage,
-        medianScoringVillage,
-    });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
 }
 async function getFirstDayOfMonth(month) {
     let year = new Date().getFullYear(); // get the current year
