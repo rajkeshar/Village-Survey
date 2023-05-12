@@ -420,6 +420,7 @@ export async function villageAssignmentForSurveyor(req: Request, res: Response) 
 
         let existUser = await userModal.findOne({ _id: new mongoose.Types.ObjectId(req.params?.id), IsActive: true });
         if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
+        if(!(existUser.isInspector)) return res.status(400).json({ message: `User is not inspector. Kindly make this profile Inspector!` });
         let result = await userModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) }, { $addToSet: {"AssignVillage.villages": { $each: villageUniqueIds } } },
             { new: true }
         ) as any
@@ -457,7 +458,7 @@ export async function departmentAssignmentForSurveyor(req: Request, res: Respons
         }
         let existUser = await userModal.findOne({ _id: ID, IsActive: true });
         if (!existUser) return res.status(400).json({ message: `User is not existed. Invalid ID!` });
-
+        if(!(existUser.isInspector)) return res.status(400).json({ message: `User is not inspector. Kindly make this profile Inspector!` });
         let userData = await userModal.findOneAndUpdate({ _id: ID }, 
          { $addToSet: { "AssignDepartments.departments": { $each: deptIds } } },
             { new: true }
