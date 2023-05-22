@@ -38,7 +38,7 @@ export async function deleteNotificationById(req: Request, res: Response) {
 }
 export async function getNotificationList(req: Request, res: Response) {
     try {
-        let notificationList = await notificationModal.find();
+        let notificationList = await notificationModal.find().sort({ createdDate: -1 });
         return res.status(201).json({ message: "notification send successfully", success: true, data: notificationList });
     } catch (error) {
         console.log(error);
