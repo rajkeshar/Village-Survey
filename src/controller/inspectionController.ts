@@ -583,7 +583,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                 //     }
                 //     return villageObj
                 // });
-                const deptData = await deptModal.find({ });
+                const deptData = await deptModal.find({})
 
                 modifiedSurvey.map((village) => {
                       if (village.departmentIds) {
@@ -592,13 +592,13 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                         village.departmentIds = village.departmentIds.map((departmentId, index) => {
                           const deptObj = deptData.find((dept) => dept && dept._id.toString() === departmentId.toString());
                           if (deptObj) {
-                            village.departmentsIds.splice(index, 0, deptObj);                          }
-                        //   return departmentIds;
+                            village.departmentIds[index] = (deptObj);
+                          }
+                          return departmentIds;
                         });
                       }
                     });
-                 surveys['modifiedSurvey'] =  modifiedSurvey
-                    
+                    surveys['modifiedSurvey'] = modifiedSurvey;
                   
                                   function getRank(surveyData:any, villageId: string) {
                     const sortedSurveyData = surveyData
