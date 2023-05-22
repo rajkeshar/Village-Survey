@@ -509,9 +509,9 @@ export async function getDashBoardDetail(req: Request, res: Response) {
             if (!surveyId) {
                 return res.status(400).json({ message: "SurveyId is required" });
             }
-            const surveys = await surveyModal.find({_id : new mongoose.Types.ObjectId(surveyId)}, 'villageUniqueIds.highestScore villageUniqueIds.departmentIds villageUniqueIds.villageId').sort({ 'villageUniqueIds.highestScore': -1 }) as any;
-            const villageIDs = surveys.flatMap((survey) => survey.villageUniqueIds.map((village) => village.villageId));
-            const departmentIds = surveys.flatMap((survey) => survey.villageUniqueIds.map((village) => village.departmentIds));
+            const surveys = await surveyModal.findOne({_id : new mongoose.Types.ObjectId(surveyId)}, 'villageUniqueIds.highestScore villageUniqueIds.departmentIds villageUniqueIds.villageId').sort({ 'villageUniqueIds.highestScore': -1 }) as any;
+            const villageIDs = surveys.villageUniqueIds.map((village) => village.villageId);
+            const departmentIds = surveys.villageUniqueIds.map((village) => village.departmentIds);
 
 
             const result = await submitSurveyModal.find({ surveyId: new mongoose.Types.ObjectId(surveyId) });
@@ -564,33 +564,41 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                         }
                     }
                 ]) as any;
-                const villageData = villageNames.filter(village => villageIDs.includes(village.villageUniqueId))
-                .map(village => {
-                    const villageUniqueIdsObj = surveys.find((v:any) => v?.villageId === village.villageUniqueId) as any;
-                    if (villageUniqueIdsObj) {
-                    surveys.villageUniqueId.villageName = village.villageName;
-                    }
-                    return village;
-                });
+                const villageData = villageNames.filter(village => villageIDs.includes(village.villageUniqueId));
+                const modifiedSurvey = [...surveys['villageUniqueIds']]
+                for(let i =0;  i < villageData.length ;i++) {
+                    let id = villageData[i]['villageUniqueId'];
+                    modifiedSurvey.map((villageObj)=>{
+                        let villageId = villageObj.villageId;
+                        if(id && (id ===villageId)){
+                            villageObj.villageName = villageData[i].villageName
+                        } 
+                    })
+                }
+                // modifiedSurvey.map(villageObj => {
+                //     const matchedVillage = villageData.find(village => village.villageUniqueId === villageObj.villageId);
+                //     if (matchedVillage) {
+                //         // villageObj['villageName'] = "";
+                //         return Object.assign(villageObj, { villageName: matchedVillage.villageName });
+                //     }
+                //     return villageObj
+                // });
+                const deptData = await deptModal.find({ });
 
-                const deptData = await deptModal.find({});
-
-                surveys.forEach((s) => {
-                    s.villageUniqueIds.forEach((village) => {
+                modifiedSurvey.map((village) => {
                       if (village.departmentIds) {
                         village.departmentIds = new Proxy(village.departmentIds, {});
                   
                         village.departmentIds = village.departmentIds.map((departmentId, index) => {
                           const deptObj = deptData.find((dept) => dept && dept._id.toString() === departmentId.toString());
                           if (deptObj) {
-                            village.departmentIds[index] = deptObj;
-                            return village.departmentIds[index];
-                          }
-                          return departmentIds;
+                            village.departmentsIds.splice(index, 0, deptObj);                          }
+                        //   return departmentIds;
                         });
                       }
                     });
-                  });
+                 surveys['modifiedSurvey'] =  modifiedSurvey
+                    
                   
                                   function getRank(surveyData:any, villageId: string) {
                     const sortedSurveyData = surveyData
@@ -600,7 +608,17 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                     const rank = sortedSurveyData.findIndex((s: any) => s.villageUniqueIds.villageId === villageId) + 1;
                     return rank > 0 ? rank : '';
                 }
-    
+                    surveys.villageUniqueIds.forEach((village) => {
+                      if (village.departmentIds) {
+                        village.departmentIds = village.departmentIds.map((departmentId) => {
+                          const deptObj = deptData.find((dept) => dept._id.toString() === departmentId);
+                          return deptObj ? deptObj : departmentId;
+                        });
+                      }
+                    });
+                  
+                  
+                  console.log(surveys);
                 return res.status(201).json({
                     message: 'Dashboard details sent successfully',
                     data: surveys,
