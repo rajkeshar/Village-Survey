@@ -528,31 +528,15 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                     }
                 ) as any;
     
-                // const villageIds = [] as any;
-                // const departmentIds = [] as any;
-                 const dashboardData = [] as any;
-                 const villageObj = [{
-                    rank : 'rank',
-                    'villageName' : 'villageName',
-                    'villageUniqueId' : 'villageUniqueId',
-                    highestScore : 'highestScore',
-                    departmentDetails :[{
-                        dertData:""
-                    }]
-                 }]
-                // users?.forEach((user: any) => {
-                //     const villages = user?.AssignVillage?.villages ?? [];
-                //     villageIds.push(...villages);
-                //     departmentIds.push(...user?.AssignDepartments?.departments ?? []);
-    
-                //     dashboardData.push({
-                //         'departments': user?.AssignDepartments?.departments ?? [],
-                //         'village': user?.AssignVillage?.villages ?? [],
-                //         'email': user?.email ?? '',
-                //         'fullname': user?.fullname ?? ''
-                //     });
-                // });
-    
+                users.forEach((user) => {
+                    if (villageIDs.includes(user.AssignVillage.villages[0])){
+                    //  &&
+                        // departmentIds.some((dept) => Object.values(dept)[0] === user.AssignDepartments.departments[0])) {
+                            surveys.villageUniqueIds.forEach((obj) => {
+                            obj.surveyorName = user.fullname
+                      })
+                    }
+                });
                 const villageNames = await zoneModal.aggregate([
                     { $match: { "blocks.taluka.villages.villageUniqueId": { $in: villageIDs } } },
                     { $unwind: "$blocks" },
@@ -565,86 +549,12 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                     }
                 ]) as any;
                 const villageData = villageNames.filter(village => villageIDs.includes(village.villageUniqueId));
-                const modifiedSurvey = [...surveys['villageUniqueIds']]
-                // const  villageArray=[] as any
-                // for(let villageObj of modifiedSurvey) {
-                //     villageArray.push(villageObj);
-                //     let villageId = villageObj.villageId;
-                //     for(let i =0;  i < villageData.length ;i++) {
-                //         let id = villageData[i]['villageUniqueId'];
-                //         if(id && (id ===villageId)){
-                //             villageArray.push({[villageObj['villageName']]: villageData[i].villageName})
-                //             // villageObj.villageName = villageData[i].villageName
-                //         }
-                //     }
-                // }
-                const villageArray = [] as any;
+                surveys.villageUniqueIds.sort((a, b) => b.highestScore - a.highestScore);
 
-                for (let villageObj of modifiedSurvey) {
-                let villageId = villageObj.villageId;
-                for (let i = 0; i < villageData.length; i++) {
-                    let id = villageData[i]['villageUniqueId'];
-                    
-                    if (id && id === villageId) {
-                        villageObj['villageName'] = ''
-                        villageObj['villageName']= villageData[i].villageName
-                        villageArray.push(villageObj);
-                        // villageArray.push({[villageObj['villageName']]: villageData[i].villageName})
-                        break; // Exit the loop if a match is found
-                    }
-                }
-                // villageArray.push(villageObj);
-                }
-
-                // modifiedSurvey.map(villageObj => {
-                //     const matchedVillage = villageData.find(village => village.villageUniqueId === villageObj.villageId);
-                //     if (matchedVillage) {
-                //         // villageObj['villageName'] = "";
-                //         return Object.assign(villageObj, { villageName: matchedVillage.villageName });
-                //     }
-                //     return villageObj
-                // });
-                const deptData = await deptModal.find({})
-                const deptArray =[] as any
-                const deptReplacementArray = [] as any
-                modifiedSurvey.map((village) => {
-                      if (village.departmentIds) {
-                        village.departmentIds = new Proxy(village.departmentIds, {});
-                        village.departmentIds = village.departmentIds.map((departmentId, index) => {
-                          const deptObj = deptData.find((dept) => dept && dept._id.toString() === departmentId.toString());
-                          if (deptObj) {
-                            deptArray.push({[village.departmentIds[index]] :deptObj})
-                            village.departmentIds[index] = (deptObj);
-                          }
-                          return departmentIds;
-                        });
-                        village.departmentIds = deptArray;
-                      }
-                    });
-                    surveys.villageUniqueIds = villageArray;
-                  
-                                  function getRank(surveyData:any, villageId: string) {
-                    const sortedSurveyData = surveyData
-                        .filter((s: any) => s.villageUniqueIds.highestScore !== '')
-                        .sort((a: any, b: any) => b.villageUniqueIds.highestScore - a.villageUniqueIds.highestScore);
-    
-                    const rank = sortedSurveyData.findIndex((s: any) => s.villageUniqueIds.villageId === villageId) + 1;
-                    return rank > 0 ? rank : '';
-                }
-                    // surveys.villageUniqueIds.forEach((village) => {
-                    //   if (village.departmentIds) {
-                    //     village.departmentIds = village.departmentIds.map((departmentId) => {
-                    //       const deptObj = deptData.find((dept) => dept._id.toString() === departmentId);
-                    //       return deptObj ? deptObj : departmentId;
-                    //     });
-                    //   }
-                    // });
-                  
-                  
-                  console.log(surveys);
+               
                 return res.status(201).json({
                     message: 'Dashboard details sent successfully',
-                    data: {surveys,villageArray,deptArray},
+                    data: surveys,
                     success: true
                 });
             }
