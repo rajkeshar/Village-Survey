@@ -13,6 +13,7 @@ import mongoose from 'mongoose';
 import zoneModal from '../modal/zoneModal';
 import { ObjectId } from 'mongodb';
 import deptModal from '../modal/departmentModal';
+import submitSurveyModal from '../modal/submitSurveyModal';
 dotenv.config()
 let jwtkey = process.env.JWTSECRET_KEY as any
 async function comparePassword(plaintextPassword: string | Buffer, hash: string) {
@@ -721,11 +722,14 @@ export async function getAssignVillageName(req: Request, res: Response) {
 export async function getRemaingVillageNAmeByUserID(req: Request, res: Response) {
     let { id } = req.params;
     try {
-        let user = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
-        if (!user.length) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
-        let villagesIds = user[0]?.AssignVillage?.villages as any
+        let user = await userModal.findOne({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
+        if (!user) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
+        let villagesIds = user?.AssignVillage?.villages as any
         let array = [] as any;
         Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
+          const pendingVillages = await submitSurveyModal.find({
+            email: user.email,
+        })
         let villages = await zoneModal.aggregate([
             { $unwind: "$blocks" },
             { $unwind: "$blocks.taluka" },
