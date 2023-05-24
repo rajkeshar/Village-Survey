@@ -556,11 +556,31 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                 // })
                 surveyData?.forEach((survey:any) =>{
                     deptData.push({
+                        'email': survey.email,
+                        'villageId': survey.villageUniqueId,
                         'deptId' : survey?.surveyDetail.deptId,
                         'deptName' : survey?.surveyDetail.deptName,
                         'totalScore' : survey?.totalScore,
                     })
                 })
+
+                // users.forEach((user) => {
+                //     const email = user.email;
+                //     const matchingDept = deptData.find((dept) => dept.email === email);
+                
+                //     if (matchingDept) {
+                //         matchingDept.fullname = user.fullname;
+                //     }
+                // });
+                deptData.map((dept) => {
+                    const email = dept.email;
+                    const matchingDept = users.find((user) => user.email === email);
+                
+                    if (matchingDept) {
+                        dept.fullname = matchingDept.fullname;
+                    }
+                });
+                
                 // surveys.deptData = deptData
                 return res.status(201).json({
                     message: 'Dashboard details sent successfully',
