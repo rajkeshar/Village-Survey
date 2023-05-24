@@ -528,31 +528,15 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                     }
                 ) as any;
     
-                // const villageIds = [] as any;
-                // const departmentIds = [] as any;
-                 const dashboardData = [] as any;
-                 const villageObj = [{
-                    rank : 'rank',
-                    'villageName' : 'villageName',
-                    'villageUniqueId' : 'villageUniqueId',
-                    highestScore : 'highestScore',
-                    departmentDetails :[{
-                        dertData:""
-                    }]
-                 }]
-                // users?.forEach((user: any) => {
-                //     const villages = user?.AssignVillage?.villages ?? [];
-                //     villageIds.push(...villages);
-                //     departmentIds.push(...user?.AssignDepartments?.departments ?? []);
-    
-                //     dashboardData.push({
-                //         'departments': user?.AssignDepartments?.departments ?? [],
-                //         'village': user?.AssignVillage?.villages ?? [],
-                //         'email': user?.email ?? '',
-                //         'fullname': user?.fullname ?? ''
-                //     });
-                // });
-    
+                users.forEach((user) => {
+                    if (villageIDs.includes(user.AssignVillage.villages[0])){
+                    //  &&
+                        // departmentIds.some((dept) => Object.values(dept)[0] === user.AssignDepartments.departments[0])) {
+                            surveys.villageUniqueIds.forEach((obj) => {
+                            obj.surveyorName = user.fullname
+                      })
+                    }
+                });
                 const villageNames = await zoneModal.aggregate([
                     { $match: { "blocks.taluka.villages.villageUniqueId": { $in: villageIDs } } },
                     { $unwind: "$blocks" },
@@ -565,63 +549,22 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                     }
                 ]) as any;
                 const villageData = villageNames.filter(village => villageIDs.includes(village.villageUniqueId));
-                const modifiedSurvey = [...surveys['villageUniqueIds']]
-                for(let i =0;  i < villageData.length ;i++) {
-                    let id = villageData[i]['villageUniqueId'];
-                    modifiedSurvey.map((villageObj)=>{
-                        let villageId = villageObj.villageId;
-                        if(id && (id ===villageId)){
-                            villageObj.villageName = villageData[i].villageName
-                        } 
+                surveys.villageUniqueIds.sort((a, b) => b.highestScore - a.highestScore);
+                let deptData = [] as any
+                let surveyData = await submitSurveyModal.find({ surveyId : new mongoose.Types.ObjectId(surveyId) })
+                // surveys.villageUniqueIds.map(villageObj =>  
+                // })
+                surveyData?.forEach((survey:any) =>{
+                    deptData.push({
+                        'deptId' : survey?.surveyDetail.deptId,
+                        'deptName' : survey?.surveyDetail.deptName,
+                        'totalScore' : survey?.totalScore,
                     })
-                }
-                // modifiedSurvey.map(villageObj => {
-                //     const matchedVillage = villageData.find(village => village.villageUniqueId === villageObj.villageId);
-                //     if (matchedVillage) {
-                //         // villageObj['villageName'] = "";
-                //         return Object.assign(villageObj, { villageName: matchedVillage.villageName });
-                //     }
-                //     return villageObj
-                // });
-                const deptData = await deptModal.find({})
-
-                modifiedSurvey.map((village) => {
-                      if (village.departmentIds) {
-                        village.departmentIds = new Proxy(village.departmentIds, {});
-                  
-                        village.departmentIds = village.departmentIds.map((departmentId, index) => {
-                          const deptObj = deptData.find((dept) => dept && dept._id.toString() === departmentId.toString());
-                          if (deptObj) {
-                            village.departmentIds[index] = (deptObj);
-                          }
-                          return departmentIds;
-                        });
-                      }
-                    });
-                    surveys['modifiedSurvey'] = modifiedSurvey;
-                  
-                                  function getRank(surveyData:any, villageId: string) {
-                    const sortedSurveyData = surveyData
-                        .filter((s: any) => s.villageUniqueIds.highestScore !== '')
-                        .sort((a: any, b: any) => b.villageUniqueIds.highestScore - a.villageUniqueIds.highestScore);
-    
-                    const rank = sortedSurveyData.findIndex((s: any) => s.villageUniqueIds.villageId === villageId) + 1;
-                    return rank > 0 ? rank : '';
-                }
-                    surveys.villageUniqueIds.forEach((village) => {
-                      if (village.departmentIds) {
-                        village.departmentIds = village.departmentIds.map((departmentId) => {
-                          const deptObj = deptData.find((dept) => dept._id.toString() === departmentId);
-                          return deptObj ? deptObj : departmentId;
-                        });
-                      }
-                    });
-                  
-                  
-                  console.log(surveys);
+                })
+                // surveys.deptData = deptData
                 return res.status(201).json({
                     message: 'Dashboard details sent successfully',
-                    data: surveys,
+                    data: {surveys,deptData},
                     success: true
                 });
             }
