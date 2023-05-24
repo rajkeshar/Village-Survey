@@ -550,11 +550,21 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                 ]) as any;
                 const villageData = villageNames.filter(village => villageIDs.includes(village.villageUniqueId));
                 surveys.villageUniqueIds.sort((a, b) => b.highestScore - a.highestScore);
-
-               
+                let deptData = [] as any
+                let surveyData = await submitSurveyModal.find({ surveyId : new mongoose.Types.ObjectId(surveyId) })
+                // surveys.villageUniqueIds.map(villageObj =>  
+                // })
+                surveyData?.forEach((survey:any) =>{
+                    deptData.push({
+                        'deptId' : survey?.surveyDetail.deptId,
+                        'deptName' : survey?.surveyDetail.deptName,
+                        'totalScore' : survey?.totalScore,
+                    })
+                })
+                // surveys.deptData = deptData
                 return res.status(201).json({
                     message: 'Dashboard details sent successfully',
-                    data: surveys,
+                    data: {surveys,deptData},
                     success: true
                 });
             }
