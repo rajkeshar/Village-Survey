@@ -560,7 +560,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                         'villageId': survey.villageUniqueId,
                         'deptId' : survey?.surveyDetail.deptId,
                         'deptName' : survey?.surveyDetail.deptName,
-                        'totalScore' : survey?.totalScore,
+                        'totalScore' : survey?.totalScore ? survey?.totalScore : '',
                     })
                 })
 
