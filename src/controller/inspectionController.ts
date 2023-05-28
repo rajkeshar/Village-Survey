@@ -684,8 +684,16 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                 }
             }
         }
+        let startRange = req.body.startRange
+        let endRange = req.body.endRange
+
+        let finalNewArrayOfData:any = []
+        for(let range= startRange ; range<endRange ; range++)
+        {
+              finalNewArrayOfData.push(newArrayOfResult[range])
+        }
         
-        res.status(200).json(newArrayOfResult)
+        res.status(200).json({data:finalNewArrayOfData,btn:newArrayOfResult.length/5})
 
        }
        catch(error)

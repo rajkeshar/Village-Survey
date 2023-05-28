@@ -18,7 +18,7 @@ router.get('/getrankbisescore/:surveyId', getScoreBiseRank)
 router.get('/getprogressdetailofsurvey/:surveyId', progressDetailofSurvey)
 router.get('/getdashboarddetail/:surveyId', getDashBoardDetail)
 router.get('/gethighscore/:surveyId', getHighScoreVillage)
-router.get('/topRankingVilaages',topRankingVilaages)
+router.post('/topRankingVilaages/',topRankingVilaages)
 
 
 export default router;
