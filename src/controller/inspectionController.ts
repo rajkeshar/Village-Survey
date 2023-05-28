@@ -658,7 +658,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
             submitSurvetDeptScore.map((filter:any)=>{
 
-
+                
                 if(filter.villageUniqueId == matchVillage.villageUniqueId)
                 {
 
@@ -690,7 +690,12 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         let finalNewArrayOfData:any = []
         for(let range= startRange ; range<endRange ; range++)
         {
-              finalNewArrayOfData.push(newArrayOfResult[range])
+        let deptTotalScore = 0
+            newArrayOfResult[range].departmants.map((scr)=>{
+                deptTotalScore = deptTotalScore + scr.score
+            })
+              finalNewArrayOfData.push({...newArrayOfResult[range],deptTotalScore})
+
         }
         
         res.status(200).json({data:finalNewArrayOfData,btn:newArrayOfResult.length/5})
