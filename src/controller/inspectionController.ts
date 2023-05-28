@@ -513,10 +513,17 @@ export async function getDashBoardDetail(req: Request, res: Response) {
             const villageIDs = surveys.villageUniqueIds.map((village) => village.villageId);
             const departmentIds = surveys.villageUniqueIds.map((village) => village.departmentIds);
 
+            // console.log(surveys)
+            // console.log(departmentIds)
+            // console.log("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
+
+
 
             const result = await submitSurveyModal.find({ surveyId: new mongoose.Types.ObjectId(surveyId) });
+
+            console.log(result)
             const emails = result.map(item => item.email).filter((value, index, self) => self.indexOf(value) === index);
-    
+              console.log(emails,"ji")
             if (result) {
                 const users = await userModal.find(
                     { email: { $in: emails } },
@@ -594,6 +601,106 @@ export async function getDashBoardDetail(req: Request, res: Response) {
             console.log(error);
             return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false });
         }
+    }
+
+    export async function topRankingVilaages(req: Request, res: Response) {
+       try{
+        const result = await submitSurveyModal.find({})
+          
+        let data = result.map((village)=>{
+            
+            return village.villageUniqueId
+        })
+
+
+        console.log(data)
+
+       let submitSurvetDeptScore:any = []
+        result.map((deptScore:any)=>{
+            let singleSurveuObj:any = {}
+            let finalScore = 0
+
+            deptScore.surveyDetail.schemeDetails.map((schemeScore:any)=>{
+                schemeScore.questionnaire.map((questionScore)=>{
+                      finalScore = finalScore + questionScore.score
+                })
+                singleSurveuObj = {
+                    villageName:deptScore.villageName,
+                    villageUniqueId:deptScore.villageUniqueId,
+                    email:deptScore.email,
+                    totalScore:deptScore.totalScore,
+                    departmants:[{
+                        deptId:deptScore.surveyDetail.deptId,
+                        deptName:deptScore.surveyDetail.deptName,
+                        score:finalScore
+
+                    }]
+                }
+            })
+
+            
+
+           
+
+            submitSurvetDeptScore.push(singleSurveuObj)
+
+        })
+          
+        let arrOfResult:any = []
+        submitSurvetDeptScore.map((matchVillage:any,index,arr)=>{
+            let objOfResult:any ={
+                "villageName": matchVillage.villageName,
+                "villageUniqueId": matchVillage.villageUniqueId,
+                "email":matchVillage.email,
+                "totalScore": matchVillage.totalScore,
+                "departmants":[]
+            }
+
+            submitSurvetDeptScore.map((filter:any)=>{
+
+
+                if(filter.villageUniqueId == matchVillage.villageUniqueId)
+                {
+
+                        objOfResult.departmants.push(filter.departmants[0])
+                }
+            })
+
+            arrOfResult.push(objOfResult)
+                
+
+        })
+
+
+
+        let newArrayOfResult :any = []
+
+        for(let singleObj of arrOfResult){
+            if(newArrayOfResult.length == 0){
+                newArrayOfResult.push(singleObj)
+            }else{
+                if( ! newArrayOfResult.find((obj : any)=>obj.villageUniqueId == singleObj.villageUniqueId)){
+                    newArrayOfResult.push(singleObj)
+                }
+            }
+        }
+        let startRange = req.body.startRange
+        let endRange = req.body.endRange
+
+        let finalNewArrayOfData:any = []
+        for(let range= startRange ; range<endRange ; range++)
+        {
+              finalNewArrayOfData.push(newArrayOfResult[range])
+        }
+        
+        res.status(200).json({data:finalNewArrayOfData,btn:newArrayOfResult.length/5})
+
+       }
+       catch(error)
+       {
+        res.status(500).json(error)
+
+       }
     }
 export async function getHighScoreVillage(req: Request, res: Response) {
     const { surveyId } = req.params;
