@@ -687,16 +687,24 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         let startRange = req.body.startRange
         let endRange = req.body.endRange
 
+        if(endRange > newArrayOfResult.length)
+        {
+            endRange = newArrayOfResult.length
+        }
+
         let finalNewArrayOfData:any = []
         for(let range= startRange ; range<endRange ; range++)
         {
         let deptTotalScore = 0
+      
+        
             newArrayOfResult[range].departmants.map((scr)=>{
                 deptTotalScore = deptTotalScore + scr.score
             })
               finalNewArrayOfData.push({...newArrayOfResult[range],deptTotalScore})
-
         }
+
+        
         
         res.status(200).json({data:finalNewArrayOfData,btn:newArrayOfResult.length/5})
 
