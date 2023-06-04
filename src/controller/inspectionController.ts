@@ -628,6 +628,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                     villageName:deptScore.villageName,
                     villageUniqueId:deptScore.villageUniqueId,
                     email:deptScore.email,
+                    surveyId:deptScore.surveyId,
                     totalScore:deptScore.totalScore,
                     departmants:[{
                         deptId:deptScore.surveyDetail.deptId,
@@ -651,17 +652,16 @@ export async function getDashBoardDetail(req: Request, res: Response) {
             let objOfResult:any ={
                 "villageName": matchVillage.villageName,
                 "villageUniqueId": matchVillage.villageUniqueId,
+                "surveyId":matchVillage.surveyId,
                 "email":matchVillage.email,
                 "totalScore": matchVillage.totalScore,
                 "departmants":[]
             }
 
             submitSurvetDeptScore.map((filter:any)=>{
-
                 
                 if(filter.villageUniqueId == matchVillage.villageUniqueId)
                 {
-
                         objOfResult.departmants.push(filter.departmants[0])
                 }
             })
