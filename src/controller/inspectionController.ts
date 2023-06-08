@@ -716,6 +716,159 @@ export async function getDashBoardDetail(req: Request, res: Response) {
        }
     }
 
+    export async function departmantQuestionRankData(req: Request, res: Response) {
+        try{
+         const result = await submitSurveyModal.find({})
+           
+         let data = result.map((village)=>{
+             
+             return village.villageUniqueId
+         })
+ 
+ 
+         console.log(data)
+ 
+        let submitSurvetDeptScore:any = []
+        
+         result.map((deptScore:any)=>{
+             let singleSurveuObj:any = {}
+             let finalScore = 0
+ 
+             deptScore.surveyDetail.schemeDetails.map((schemeScore:any)=>{
+                 schemeScore.questionnaire.map((questionScore)=>{
+                       finalScore = finalScore + questionScore.score
+                 })
+                 singleSurveuObj = {
+                     villageName:deptScore.villageName,
+                     villageUniqueId:deptScore.villageUniqueId,
+                     email:deptScore.email,
+                     surveyId:deptScore.surveyId,
+                     totalScore:deptScore.totalScore,
+                     departmants:[{
+                         deptId:deptScore.surveyDetail.deptId,
+                         deptName:deptScore.surveyDetail.deptName,
+                         score:finalScore,
+                         schemeDetails:deptScore.surveyDetail.schemeDetails
+ 
+                     }]
+                 }
+             })
+ 
+             
+ 
+            
+ 
+             submitSurvetDeptScore.push(singleSurveuObj)
+ 
+         })
+           
+         let arrOfResult:any = []
+         submitSurvetDeptScore.map((matchVillage:any,index,arr)=>{
+             let objOfResult:any ={
+                 "villageName": matchVillage.villageName,
+                 "villageUniqueId": matchVillage.villageUniqueId,
+                 "surveyId":matchVillage.surveyId,
+                 "email":matchVillage.email,
+                 "totalScore": matchVillage.totalScore,
+                 "departmants":[]
+             }
+ 
+             submitSurvetDeptScore.map((filter:any)=>{
+                 
+                 if(filter.villageUniqueId == matchVillage.villageUniqueId)
+                 {
+                         objOfResult.departmants.push(filter.departmants[0])
+                 }
+             })
+ 
+             arrOfResult.push(objOfResult)
+                 
+ 
+         })
+ 
+ 
+ 
+         let newArrayOfResult :any = []
+ 
+         for(let singleObj of arrOfResult){
+             if(newArrayOfResult.length == 0){
+                 newArrayOfResult.push(singleObj)
+             }else{
+                 if( ! newArrayOfResult.find((obj : any)=>obj.villageUniqueId == singleObj.villageUniqueId)){
+                     newArrayOfResult.push(singleObj)
+                 }
+             }
+         }
+         let startRange = req.body.startRange
+         let endRange = req.body.endRange
+ 
+         if(endRange > newArrayOfResult.length)
+         {
+             endRange = newArrayOfResult.length
+         }
+ 
+         let finalNewArrayOfData:any = []
+
+         let finalVillage = newArrayOfResult.filter((checkItIs)=>{
+
+            return checkItIs.villageUniqueId == req.body.villageUniqueId && checkItIs.surveyId == req.body.surveyId
+         })
+
+         console.log(finalVillage)
+         
+        //  newArrayOfResult.map( (deptsData:any)=>{
+        //     let questionDataArrayList:any = []
+        //     deptsData.departmants.map((question:any)=>{
+
+                
+        //         question.schemeDetails.map((questionAdd:any)=>{
+        //              questionAdd.map(())
+
+        //         })
+
+        //     })
+
+        //     finalNewArrayOfData.push({...deptsData,newArrayOfResult})
+
+        //  })
+
+        let finalDepartmant:any = finalVillage[0].departmants.filter((deptCHeck)=>{
+            return deptCHeck.deptId == req.body.deptId
+        })
+
+        let questionArray:any = []
+
+         finalDepartmant[0].schemeDetails.map((questionAdd)=>{
+
+            questionAdd.questionnaire.map((ques)=>{
+
+
+                 let obj = {
+                    surveyId:finalVillage[0].surveyId,
+                    schemeId:questionAdd.schemeId,
+                    schemeName:questionAdd.schemeName,
+                    question:ques.question,
+                    questionID:ques.questionID,
+                    score:ques.score
+                 }
+                questionArray.push(obj)
+
+            })
+
+         })
+
+
+        
+
+         res.status(200).json(questionArray)
+ 
+        }
+        catch(error)
+        {
+         res.status(500).json(error)
+ 
+        }
+     }
     export async function topRankingDepartmants(req:Request, res:Response)
     {
         try{
@@ -743,6 +896,8 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                         villageName:deptScore.villageName,
                         villageUniqueId:deptScore.villageUniqueId,
                         email:deptScore.email,
+                         surveyId:deptScore.surveyId,
+
                         totalScore:deptScore.totalScore,
                         departmants:[{
                             deptId:deptScore.surveyDetail.deptId,
@@ -763,9 +918,11 @@ export async function getDashBoardDetail(req: Request, res: Response) {
               
             let arrOfResult:any = []
             submitSurvetDeptScore.map((matchVillage:any,index,arr)=>{
+                console.log(matchVillage)
                 let objOfResult:any ={
                     "villageName": matchVillage.villageName,
                     "villageUniqueId": matchVillage.villageUniqueId,
+                    "surveyId":matchVillage.surveyId,
                     "email":matchVillage.email,
                     "totalScore": matchVillage.totalScore,
                     "departmants":[]
