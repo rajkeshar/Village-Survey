@@ -1,10 +1,10 @@
 import mongoose, { Schema } from 'mongoose'
 
 const surveySchema = new Schema({
-    // surveyName:{
-    //     type :String,
-    //     required : true
-    // },
+    surveyName:{
+        type :String,
+        required : true
+    },
     // surveyorLoginId:{
     //     type :String
     // },
