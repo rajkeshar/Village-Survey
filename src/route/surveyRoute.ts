@@ -1,5 +1,5 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
-import { addNewSurvey,isOnGoingSurveyTrue,progressDetailofSurvey, changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey, submitSurvey, monthlySurveyCompleted, getInspectionsDetails, getScoreBiseRank, getDashBoardDetail,departmantQuestionRankData,topRankingVilaages,topRankingDepartmants, getHighScoreVillage } from '../controller/inspectionController';
+import { addNewSurvey,checkMatrix,isOnGoingSurveyTrue,progressDetailofSurvey, changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey, submitSurvey, monthlySurveyCompleted, getInspectionsDetails, getScoreBiseRank, getDashBoardDetail,departmantQuestionRankData,topRankingVilaages,topRankingDepartmants, getHighScoreVillage } from '../controller/inspectionController';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
 
@@ -21,6 +21,8 @@ router.get('/gethighscore/:surveyId', getHighScoreVillage)
 router.post('/topRankingVilaages/',topRankingVilaages)
 router.post('/topRankingDepartmantVillages/',topRankingDepartmants)
 router.post('/questionList/',departmantQuestionRankData)
+router.get('/checkMatrix/',checkMatrix)
+
 
 
 

@@ -716,6 +716,92 @@ export async function getDashBoardDetail(req: Request, res: Response) {
        }
     }
 
+    export async function checkMatrix(req: Request, res: Response) {
+        try {
+
+            let dist = await zoneModal.findOne({ IsActive: true });
+            let deptList:any = await deptModal.find({IsActive:true})
+
+            console.log(deptList.length)
+
+            if (!dist) return res.status(201).send({ message: "District Id or block Id is not found, Invalid ID" })
+            let villageArray = [] as any;
+            let result = await zoneModal.aggregate([
+                { $unwind: "$blocks" },
+                { $unwind: "$blocks.taluka.villages" },
+                {
+                    $project: {
+                        _id: 1,
+                        districtName: 1,
+                        villageName: "$blocks.taluka.villages.villageName",
+                        villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
+                    }
+                }])
+
+
+
+               let users = await userModal.find({IsActive:true})
+            
+
+               
+               
+               let newArray:any = [ ]
+               let newArrayOfDept:any = [ ]
+
+               let totalDept = 0
+               users.map((user:any)=>{
+                    totalDept = totalDept + user.AssignDepartments.departments.length
+                   user.AssignVillage.villages.map((ids)=>{
+                       newArray.push(ids)
+                    })
+
+                    newArrayOfDept.push(user.AssignVillage.villages.length * user.AssignDepartments.departments.length)
+                    
+                })
+                console.log(totalDept)
+
+               let newArrayOfResult :any = []
+
+               for(let singleObj of newArray){
+                   if(newArrayOfResult.length == 0){
+                       newArrayOfResult.push(singleObj)
+                   }else{
+                       if( ! newArrayOfResult.find((obj : any)=>obj == singleObj)){
+                           newArrayOfResult.push(singleObj)
+                       }
+                   }
+               }         
+               console.log(totalDept)
+               console.log(result.length)
+               console.log(newArrayOfResult.length)
+               if(deptList.length * users.length == totalDept)
+               {
+
+                if(result.length == newArrayOfResult.length)
+                {
+                    return res.status(201).send({ message: "true" })
+
+                }
+                else{
+                return res.status(500).send({ message: "false" })
+
+                }
+
+                   
+               }
+               else{
+                return res.status(500).send({ message: "false" })
+
+               }
+
+
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+        }
+    }
+    
+
     export async function departmantQuestionRankData(req: Request, res: Response) {
         try{
          const result = await submitSurveyModal.find({})
