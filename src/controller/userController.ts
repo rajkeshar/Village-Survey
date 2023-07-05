@@ -118,6 +118,7 @@ export async function createUser(req: any, role: string, res: Response) {
                     Designation: Designation,
                     CurrentVillageName: CurrentVillageName,
                     CurrentTalukaName: CurrentTalukaName,
+                    isInspector:true,
                     NoofSurveyconducted: NoofSurveyconducted
                 });
             let newUser = await saveUser.save();

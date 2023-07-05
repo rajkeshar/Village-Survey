@@ -29,7 +29,7 @@ import mongoose from 'mongoose'
 mongoose.set('strictQuery', true);
 const connectDB = async (mongoDBURL: any) => {
   try {
-      const conn = await mongoose.connect(mongoDBURL) as any
+      const conn = await mongoose.connect("mongodb+srv://ankushsss:756624@cluster0.rmop2.mongodb.net/?retryWrites=true&w=majority") as any
       console.log(`MongoDB Connected.....${conn}`)
   } catch (error) {
     console.log(error)
