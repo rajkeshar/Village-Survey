@@ -99,6 +99,35 @@ export async function addNewTaluka(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+
+export async function updateTaluka(req: Request, res: Response)
+{
+        try {
+         let update  = await zoneModal.findByIdAndUpdate(
+            req.params.id,
+            {
+              $set: {
+                'blocks.$[block].taluka.talukaName': req.body.talukaName
+              }
+            },
+            {
+              arrayFilters: [
+                {
+                  'block.blockUniqueId': req.body.blockUniqueId
+                }
+              ]
+            }
+          );
+      
+          console.log(update);
+          res.json({mssg:"success"})
+        } catch (error) {
+          console.error('Error updating taluka name:', error);
+          res.json({mssg:error})
+
+        }
+
+}
 export async function updateZone(req: Request, res: Response) {
     try {
         let { districtName, blockName, blockUniqueId, villageName, talukaName, talukaUniqueId, villageUniqueId } = req.body
@@ -153,7 +182,9 @@ export async function deleteBlockOrVillage(req: Request, res: Response) {
         if (block === 'block') {
             await zoneModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) },
                 { $pull: { 'blocks': { 'blockUniqueId': blockUniqueId } } })
-        } else {
+        }
+        
+        else {
             await zoneModal.findOneAndUpdate(
                 {
                     "_id": new mongoose.Types.ObjectId(id),
