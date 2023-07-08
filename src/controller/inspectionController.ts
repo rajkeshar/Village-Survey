@@ -801,14 +801,14 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
                 }
                 else{
-                return res.status(500).send({ message: "false" })
+                return res.status(500).send({ message: "no" })
 
                 }
 
                    
                }
                else{
-                return res.status(500).send({ message: "false" })
+                return res.status(500).send({ message: "yes" })
 
                }
 
