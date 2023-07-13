@@ -197,7 +197,7 @@ export async function   getAllDepartment(req: Request, res: Response) {
     }
 }
 export async function getAllDepartmentAndScheme(req: Request, res: Response) {
-    const deptList = await deptModal.find({ 'IsActive': true });
+    const deptList = await deptModal.find({ 'IsActive': true,'isDisable':false, });
     try {
         res.send({ message: "department list fetched successfully", data: deptList });
     } catch (error) {
