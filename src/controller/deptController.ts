@@ -205,6 +205,16 @@ export async function getAllDepartmentAndScheme(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+
+export async function getAllDepartmentAndScheme2(req: Request, res: Response) {
+    const deptList = await deptModal.find({ 'IsActive': true});
+    try {
+        res.send({ message: "department list fetched successfully", data: deptList });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
 export async function getSchemeByDepartment(req: Request, res: Response) {
     let { id } = req.params;
     try {
