@@ -711,7 +711,7 @@ export async function getAssignVillageName(req: Request, res: Response) {
               }
             },
             { $unwind: "$departments" },
-            { $project: { deptName: "$departments.deptName",deptId: "$departments._id", _id: 0 } }
+            { $project: { deptName: "$departments.deptName",isDisable:"$departments.isDisable",deptId: "$departments._id", _id: 0 } }
           ])      
         return res.status(201).send({ message: 'Successfully fetched village name',data:{remaningVillageArrayCount,assignVillageArrayCount,villageArray,deptList}, success: true });
     } catch (error) {
