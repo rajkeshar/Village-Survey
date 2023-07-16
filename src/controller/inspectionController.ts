@@ -738,7 +738,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         try {
 
             let dist = await zoneModal.findOne({ IsActive: true });
-            let deptList:any = await deptModal.find({IsActive:true})
+            let deptList:any = await deptModal.find({IsActive:true,isDisable:false})
 
             console.log(deptList.length)
 
