@@ -167,7 +167,17 @@ export async function fetchDepartmentListById(req: Request, res: Response) {
             });
 
         }
-        return res.status(201).send({ message: 'Successfully listed', data: deptArray, success: true });
+        let newArray:any = []
+        deptIds.map((id:any)=>{
+            let findDataOf:any = deptArray.filter((filterData:any)=>{
+               return filterData.deptId == id   
+            })
+            newArray.push(findDataOf.length)
+        })
+
+        console.log(newArray)
+        
+        return res.status(201).send({ message: 'Successfully listed', data: deptArray,deptQuestionCount:newArray, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
