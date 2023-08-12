@@ -663,45 +663,138 @@ export async function pullDepartmentsFromSurveyor(req: Request, res: Response) {
 export async function getAssignVillageName(req: Request, res: Response) {
     let { id } = req.params;
     try {
-        let user = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
-        if (!user.length) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
-        let villagesIds = user[0]?.AssignVillage?.villages as any
+        // let user = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
+        // if (!user.length) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
+        // let villagesIds = user[0]?.AssignVillage?.villages as any
        
-        let array = [] as any;
-        Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
-        let result = await zoneModal.find({ "blocks.taluka.villages":{$elemMatch: { "villageUniqueId": { $in :array} }}}, { "blocks.taluka.villages.$": 1 })
-        const villageArray = result[0]?.blocks.flatMap(block =>
-            block?.taluka?.villages
-              .filter(village => array.includes(village.villageUniqueId))
-              .map(({ villageName, villageUniqueId }) => ({ villageName, villageUniqueId }))
-          ) || [] as any;
-        let assignVillageArrayCount = villageArray.length; 
-        //   let villagesIds = user[0]?.AssignVillage?.villages as any
-        //   let array = [] as any;
-        //   Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
-          let remaingVillages = await zoneModal.aggregate([
-              { $unwind: "$blocks" },
-              { $unwind: "$blocks.taluka" },
-              { $unwind: "$blocks.taluka.villages" },
-              { $match: {
-                  "blocks.taluka.villages.villageUniqueId": {
-                    $nin: array
-                  }
+        // let array = [] as any;
+        // Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
+        // let result = await zoneModal.find({ "blocks.taluka.villages":{$elemMatch: { "villageUniqueId": { $in :array} }}}, { "blocks.taluka.villages.$": 1 })
+        // const villageArray = result[0]?.blocks.flatMap(block =>
+        //     block?.taluka?.villages
+        //       .filter(village => array.includes(village.villageUniqueId))
+        //       .map(({ villageName, villageUniqueId }) => ({ villageName, villageUniqueId }))
+        //   ) || [] as any;
+        // let assignVillageArrayCount = villageArray.length; 
+        // //   let villagesIds = user[0]?.AssignVillage?.villages as any
+        // //   let array = [] as any;
+        // //   Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
+        //   let remaingVillages = await zoneModal.aggregate([
+        //       { $unwind: "$blocks" },
+        //       { $unwind: "$blocks.taluka" },
+        //       { $unwind: "$blocks.taluka.villages" },
+        //       { $match: {
+        //           "blocks.taluka.villages.villageUniqueId": {
+        //             $nin: array
+        //           }
+        //         }
+        //       },
+        //       { $group: {
+        //           _id: "$blocks.taluka.villages.villageName",
+        //           villageUniqueId: { $push: "$blocks.taluka.villages.villageUniqueId" }
+        //         }
+        //       },
+        //       { $project: {
+        //           villageName: "$_id",
+        //           villageUniqueId: 1,
+        //           _id: 0
+        //         }
+        //       }
+        //     ])   
+
+         let users:any = await userModal.find( {IsActive: true})
+         
+         let newArray:any = [ ]
+            //    let newArrayOfDept:any = [ ]
+
+            //    let totalDept = 0
+               users.map((user:any)=>{
+                    // totalDept = totalDept + user.AssignDepartments.departments.length
+                   user.AssignVillage.villages.map((ids)=>{
+                       newArray.push(ids)
+                    })
+
+                    // newArrayOfDept.push(user.AssignVillage.villages.length * user.AssignDepartments.departments.length)
+                    
+                })
+                // console.log(totalDept)
+
+               let newArrayOfResult :any = []
+
+               for(let singleObj of newArray){
+                   if(newArrayOfResult.length == 0){
+                       newArrayOfResult.push(singleObj)
+                   }else{
+                       if( ! newArrayOfResult.find((obj : any)=>obj == singleObj)){
+                           newArrayOfResult.push(singleObj)
+                       }
+                   }
+               }         
+              
+               console.log(newArrayOfResult,"jkl")
+               console.log(users,"jkl")
+
+
+               let distData = await zoneModal.findOne({ IsActive: true });
+              
+   
+            //    if (!distData) return res.status(201).send({ message: "District Id or block Id is not found, Invalid ID" })
+               let villageArrayData = [] as any;
+               let resultData = await zoneModal.aggregate([
+                   { $unwind: "$blocks" },
+                   { $unwind: "$blocks.taluka.villages" },
+                   {
+                       $project: {
+                           _id: 1,
+                           districtName: 1,
+                           villageName: "$blocks.taluka.villages.villageName",
+                           villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
+                       }
+                   }])
+   
+
+
+
+                console.log(resultData.length,"resultData")
+
+
+
+        let user:any = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true },{"AssignVillage":1,"AssignDepartments":1})
+        if (!user.length) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
+        let dist = await zoneModal.findOne({ IsActive: true });
+        if (!dist) return res.status(201).send({ message: "District Id or block Id is not found, Invalid ID" })
+        let villageArray = [] as any;
+        let result = await zoneModal.aggregate([
+            { $unwind: "$blocks" },
+            { $unwind: "$blocks.taluka.villages" },
+            {
+                $project: {
+                    _id: 1,
+                    districtName: 1,
+                    villageName: "$blocks.taluka.villages.villageName",
+                    villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
                 }
-              },
-              { $group: {
-                  _id: "$blocks.taluka.villages.villageName",
-                  villageUniqueId: { $push: "$blocks.taluka.villages.villageUniqueId" }
-                }
-              },
-              { $project: {
-                  villageName: "$_id",
-                  villageUniqueId: 1,
-                  _id: 0
-                }
-              }
-            ])    
-        let remaningVillageArrayCount = remaingVillages?.length;
+            }])
+
+            let finalArray:any = []
+              console.log(user,"user")
+            result.map((vill:any)=>{
+                user[0].AssignVillage.villages.map((id)=>{
+                     if(id==vill.villageUniqueId)
+                     {
+                        finalArray.push(vill)
+                     }
+
+                })
+
+            })
+
+
+            console.log(finalArray.length,user[0].AssignVillage.villages.length)
+
+
+            
+        // let remaningVillageArrayCount = remaingVillages?.length;
         let deptList = await userModal.aggregate([
             { $match: { "AssignDepartments.userId": new mongoose.Types.ObjectId(id) } },
             { $lookup: {
@@ -714,7 +807,7 @@ export async function getAssignVillageName(req: Request, res: Response) {
             { $unwind: "$departments" },
             { $project: { deptName: "$departments.deptName",isDisable:"$departments.isDisable",deptId: "$departments._id", _id: 0 } }
           ])      
-        return res.status(201).send({ message: 'Successfully fetched village name',data:{remaningVillageArrayCount,assignVillageArrayCount,villageArray,deptList}, success: true });
+        return res.status(201).send({ message: 'Successfully fetched village name',data:{remaningVillageArrayCount:resultData.length - newArrayOfResult.length,assignVillageArrayCount:finalArray.length,villageArray:finalArray,deptList}, success: true });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
