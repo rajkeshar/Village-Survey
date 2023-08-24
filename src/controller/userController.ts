@@ -69,6 +69,13 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
 
         const user = await userModal.findOne({ email: email, "IsActive": true }) as any
         if (!user) return res.status(400).json({ message: "User Is not exist" })
+        if(user)
+        {
+            if(user.role == "VillageManager" )
+            {
+                return res.status(400).json({ message: "User Is not exist" })
+            }
+        }
         var validPassword;
         if (user) {
             validPassword = await bcrypt.compare(password, user.password);
@@ -76,6 +83,7 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
         if (!validPassword) {
             return res.json({ message: "password is invalid" })
         }
+
         user.password = ""
         const token = generateAccessToken(user);
         return res.status(201).json({ message: "Logged in successfully", token: token, data: user, success: true })
