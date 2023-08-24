@@ -9,6 +9,11 @@ const userSchema = new Schema({
         type :String,
         required : true
     },
+    type:{
+        type :String,
+        required : true,
+        enum:["mobile","web"]
+    },
     email:{
         type :String,
         required : true 
