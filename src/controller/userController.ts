@@ -85,6 +85,9 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
         if (user.role == "DistrictManager") {
           return res.status(400).json({ message: "User Is not exist" });
         }
+        if (user.role == "admin") {
+            return res.status(400).json({ message: "User Is not exist" });
+          }
       }
     }
     var validPassword;
