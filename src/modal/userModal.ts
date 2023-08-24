@@ -18,7 +18,8 @@ const userSchema = new Schema({
     },
     contactNumber:{
         type :Number,
-        required : true 
+        required : true, 
+        unique:true
     },
     UniqueIDNumber:{
         type :Number, 
