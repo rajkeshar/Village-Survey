@@ -71,10 +71,13 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
         if (!user) return res.status(400).json({ message: "User Is not exist" })
         if(user)
         {
+            if(user.type != "mobile")
+            {
             if(user.role == "VillageManager" )
             {
                 return res.status(400).json({ message: "User Is not exist" })
             }
+        }
         }
         var validPassword;
         if (user) {
