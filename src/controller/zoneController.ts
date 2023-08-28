@@ -418,6 +418,7 @@ export async function uploadZoneData(req: any, res: Response) {
         const workbook = xlsx.readFile(path);
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const data = xlsx.utils.sheet_to_json(sheet);
+        console.log(data)
         let villagearray = [] as any;
 
         let districtName = '';
