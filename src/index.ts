@@ -15,7 +15,7 @@ dotenv.config()
 app.use(express.static(path.join(__dirname, "client")))
 
 const port = process.env.PORT;
-const mongoDBURL = "mongodb+srv://ankushsss:756624@cluster0.rmop2.mongodb.net/?retryWrites=true&w=majority";
+const mongoDBURL = "mongodb+srv://ankushsss:756624@cluster0.rmop2.mongodb.net/survey?retryWrites=true&w=majority";
 connectDB(mongoDBURL).then((res) =>{
     console.log(res);
 })

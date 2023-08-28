@@ -142,6 +142,7 @@ export async function submitSurvey(req: Request, res: Response) {
     try {
         let surveyId = req.params.id;
         let { villageId, deptDetails, surveyorLoginId, villageName } = req.body;
+        console.log(req.body)
         if (!surveyId) {
             return res.status(400).json({ message: "SurveyId is required" })
         }

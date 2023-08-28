@@ -149,6 +149,13 @@ export async function createUser(req: any, role: string, res: Response) {
       email: email,
       IsActive: true,
     });
+    const existingUserByMobile = await userModal.findOne({
+      contactNumber: contactNumber,
+      IsActive: true,
+    })
+    
+    if (existingUserByMobile)
+    return res.status(400).json({ message: "This User is already exist!" });
 
     if (existingUser)
       return res.status(400).json({ message: "This User is already exist!" });
