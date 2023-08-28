@@ -768,6 +768,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
                let totalDept = 0
                users.map((user:any)=>{
+                   
                     totalDept = totalDept + user.AssignDepartments.departments.length
                    user.AssignVillage.villages.map((ids)=>{
                        newArray.push(ids)
@@ -789,10 +790,12 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                        }
                    }
                }         
-               console.log(totalDept)
+               console.log(totalDept,"totalDept")
                console.log(result.length)
                console.log(newArrayOfResult.length)
-               if(deptList.length * users.length == totalDept)
+               
+               console.log(deptList.length * users.length,"deptList.length * users.length")
+               if(deptList.length * users.length == totalDept - (totalDept - deptList.length * users.length))
                {
 
                 if(result.length == newArrayOfResult.length)

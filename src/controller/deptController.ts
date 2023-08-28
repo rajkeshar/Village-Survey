@@ -143,8 +143,8 @@ export async function fetchDepartmentListById(req: Request, res: Response) {
         let obj = {} as any;
         for (let id = 0; id < deptIds.length; id++) {
             let ID = deptIds[id]
-            let dept = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(ID), 'IsActive': true })
-
+            let dept:any = await deptModal.findOne({ _id: new mongoose.Types.ObjectId(ID), 'IsActive': true })
+            console.log(dept.schemeDetails[0].questionnaire)
             const deptName = dept?.deptName;
             const deptId = dept?._id;
             dept?.schemeDetails.forEach(schemeDetail => {
@@ -156,6 +156,7 @@ export async function fetchDepartmentListById(req: Request, res: Response) {
                     const questionObj = {
                         question: question.question,
                         range: question.range,
+                        valueAgainstEveryRangeElement:question.valueAgainstEveryRangeElement,
                         questionId: question._id,
                         schemeName,
                         schemeId,
