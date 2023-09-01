@@ -1,9 +1,11 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
-import { addNewZone,updateTaluka, addNewVillage, deleteZone, getAllBlocks, getAllDistrict, getAllVillage, getZoneById,
+import { addNewZone, delete_taluka,add_taluka,update_taluka,updateTaluka, addNewVillage, deleteZone, getAllBlocks, getAllDistrict, getAllVillage, getZoneById,
      updateZone, getAllZone, deleteBlockOrVillage, getCountOfAllVillage, getCountOfAllBlocks, addNewTaluka, 
      getAllTaluka, getAllVillageBasedOnTalukId, getBlockById, uploadZoneData,  isVillageDisbaleTrue,getRemainingVillageFromAssignment, getAllTalukaList, searchVillageName } from '../controller/zoneController';
 import { upload,uploadVillage } from '../middleware/auth';
 import {checkRole} from '../utils/user-auth'
+import zoneModal from '../modal/zoneModal';
+import mongoose from 'mongoose';
 const router = express.Router();
 
 router.post('/addnewzone', addNewZone)
@@ -29,6 +31,12 @@ router.get('/getalltaluka', getAllTalukaList)
 router.get('/getallremainingvilage', getRemainingVillageFromAssignment)
 router.get('/villagesearch/:searchquery', searchVillageName)
 
-
+router.put('/edit-taluka/:talukaUniqueId', update_taluka);
+   
+   // Add Taluka
+   router.post('/add-taluka',add_taluka);
+   
+   // Delete Taluka
+   router.delete('/delete-taluka/:talukaUniqueId', delete_taluka);
 
 export default router;
