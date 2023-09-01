@@ -723,8 +723,17 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         }
 
         
-        
-        res.status(200).json({data:finalNewArrayOfData,btn:newArrayOfResult.length/5})
+         let sortedArray = finalNewArrayOfData.sort((a, b) => b.deptTotalScore - a.deptTotalScore)
+         let arrayWithRank:any = []
+         sortedArray.map((rank,index)=>{
+             arrayWithRank.push({
+                "rank":index+1,
+                ...rank
+             })
+         })
+
+         
+        res.status(200).json({data:arrayWithRank,btn:newArrayOfResult.length/5})
 
        }
        catch(error)
@@ -768,7 +777,6 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
                let totalDept = 0
                users.map((user:any)=>{
-                   
                     totalDept = totalDept + user.AssignDepartments.departments.length
                    user.AssignVillage.villages.map((ids)=>{
                        newArray.push(ids)
@@ -795,7 +803,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                console.log(newArrayOfResult.length)
                
                console.log(deptList.length * users.length,"deptList.length * users.length")
-               if(deptList.length * users.length == totalDept - (totalDept - deptList.length * users.length))
+               if(deptList.length * users.length == totalDept)
                {
 
                 if(result.length == newArrayOfResult.length)
