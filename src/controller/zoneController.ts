@@ -4,6 +4,79 @@ import zoneModal from '../modal/zoneModal'
 import xlsx from 'xlsx';
 import userModal from '../modal/userModal';
 
+export async function add_taluka(req: Request, res: Response){
+    var date:any = new Date();
+
+    const newTalukaData = req.body;
+    console.log(newTalukaData)
+    var components = [
+         date.getYear(),
+         date.getMonth(),
+         date.getDate(),
+         date.getHours(),
+         date.getMinutes(),
+         date.getSeconds(),
+         date.getMilliseconds()
+     ];
+     
+     var id = `block${components.join("")}`
+    try {
+      const district = await zoneModal.findOneAndUpdate(
+        {},
+        { $push: { blocks: { taluka: newTalukaData,blockUniqueId:id,blockName:`block_${id}` } } },
+        { new: true }
+      );
+  
+      if (district) {
+        res.json(district);
+      } else {
+        res.status(404).json({ message: 'District not found' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+  export async function update_taluka(req: Request, res: Response){
+        const { talukaUniqueId } = req.params;
+        const updatedTalukaData = req.body;
+      
+        try {
+          const district = await zoneModal.findOneAndUpdate(
+            { 'blocks.taluka.talukaUniqueId': talukaUniqueId },
+            { $set: { 'blocks.$.taluka': updatedTalukaData } },
+            { new: true }
+          );
+      
+          if (district) {
+            res.json(district);
+          } else {
+            res.status(404).json({ message: 'Taluka not found' });
+          }
+        } catch (error) {
+          res.status(500).json({ message: 'Internal server error' });
+        }
+  }
+
+  export async function delete_taluka(req: Request, res: Response){
+    const { talukaUniqueId } = req.params;
+   
+    try {
+      const district = await zoneModal.findOneAndUpdate(
+        {},
+        { $pull: { blocks: { 'taluka.talukaUniqueId': talukaUniqueId } } },
+        { new: true }
+      );
+  
+      if (district) {
+        res.json(district);
+      } else {
+        res.status(404).json({ message: 'District not found' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+}
 export async function addNewZone(req: Request, res: Response) {
     try {
         let { blockUniqueId, blockName, villageName, villageUniqueId, zoneId,
@@ -609,3 +682,6 @@ export async function searchVillageName(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
     }
 }
+
+
+
