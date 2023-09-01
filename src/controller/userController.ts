@@ -277,8 +277,12 @@ export async function verifyUserEmail(
 // };
 export async function verifyOTP(req: Request, res: Response) {
   const { otp, confirmPassword } = req.body;
+  console.log(req.body)
   const authHeader = req.headers["authorization"] as string | undefined;
   const token = authHeader && authHeader.split(" ")[1];
+
+
+
 
   if (!otp || !token) {
     res.status(400).send({ message: "Missing OTP or token" });

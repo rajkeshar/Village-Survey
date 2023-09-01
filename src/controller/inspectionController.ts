@@ -712,7 +712,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         }
 
         let finalNewArrayOfData:any = []
-        for(let range= startRange ; range<endRange ; range++)
+        for(let range=0 ; range<newArrayOfResult.length ; range++)
         {
         let deptTotalScore = 0
       
