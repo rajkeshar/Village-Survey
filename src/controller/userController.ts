@@ -150,8 +150,7 @@ export async function createUser(req: any, role: string, res: Response) {
       IsActive: true,
     });
     const existingUserByMobile = await userModal.findOne({
-      contactNumber: contactNumber,
-      IsActive: true,
+      contactNumber: contactNumber
     })
     
     if (existingUserByMobile)
