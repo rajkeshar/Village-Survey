@@ -749,6 +749,10 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
             let dist = await zoneModal.findOne({ IsActive: true });
             let deptList:any = await deptModal.find({IsActive:true,isDisable:false})
+            let deptListDisable:any = await deptModal.find({IsActive:true,isDisable:true})
+
+           
+
 
             console.log(deptList.length)
 
@@ -777,17 +781,29 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                let newArrayOfDept:any = [ ]
 
                let totalDept = 0
-               users.map((user:any)=>{
-                    totalDept = totalDept + user.AssignDepartments.departments.length
+               users.map((user:any,index)=>{
+                   totalDept = totalDept + user.AssignDepartments.departments.length
+                if(index == users.length - 1)
+                {
                    user.AssignVillage.villages.map((ids)=>{
                        newArray.push(ids)
                     })
 
                     newArrayOfDept.push(user.AssignVillage.villages.length * user.AssignDepartments.departments.length)
-                    
+                }
                 })
                 console.log(totalDept)
+                let disableDepthLength = 0
+                users.map((user:any,index)=>{
+                    deptListDisable.map(((disDep)=>{
+                        if(user.AssignDepartments.departments.includes(disDep._id))
+                        {
+                            disableDepthLength = disableDepthLength + 1
+                        }
 
+                    }))
+                })
+                console.log(disableDepthLength)
                let newArrayOfResult :any = []
 
                for(let singleObj of newArray){
@@ -803,8 +819,8 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                console.log(result.length)
                console.log(newArrayOfResult.length)
                
-               console.log(deptList.length * users.length,"deptList.length * users.length")
-               if(deptList.length * users.length == totalDept)
+               console.log(deptList.length * users.length ,"deptList.length * users.length")
+               if(deptList.length * users.length == totalDept - disableDepthLength)
                {
 
                 if(result.length == newArrayOfResult.length)
@@ -820,7 +836,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                    
                }
                else{
-                return res.status(500).send({ message: "yes" })
+                return res.status(500).send({ message: "yes",deptListDisable:deptListDisable })
 
                }
 
