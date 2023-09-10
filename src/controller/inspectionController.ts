@@ -667,7 +667,10 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         })
           
         let arrOfResult:any = []
+        console.log(submitSurvetDeptScore)
         submitSurvetDeptScore.map((matchVillage:any,index,arr)=>{
+            if(matchVillage)
+            {
             let objOfResult:any ={
                 "villageName": matchVillage.villageName,
                 "villageUniqueId": matchVillage.villageUniqueId,
@@ -681,12 +684,17 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                 
                 if(filter.villageUniqueId == matchVillage.villageUniqueId)
                 {
+                    // console.log(filter.departmants,"filter.departmants")
+
+                    if(filter.departmants)
+                    {
                         objOfResult.departmants.push(filter.departmants[0])
+                    }
                 }
             })
 
             arrOfResult.push(objOfResult)
-                
+        }
 
         })
 
@@ -726,6 +734,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         
          let sortedArray = finalNewArrayOfData.sort((a, b) => b.deptTotalScore - a.deptTotalScore)
          let arrayWithRank:any = []
+         console.log(sortedArray)
          sortedArray.map((rank,index)=>{
              arrayWithRank.push({
                 "rank":index+1,
@@ -739,6 +748,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
        }
        catch(error)
        {
+        console.log(error)
         res.status(500).json(error)
 
        }
