@@ -651,6 +651,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                     departmants:[{
                         deptId:deptScore.surveyDetail.deptId,
                         deptName:deptScore.surveyDetail.deptName,
+                        email:deptScore.email,
                         score:finalScore
 
                     }]
