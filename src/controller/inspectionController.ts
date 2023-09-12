@@ -652,7 +652,8 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                         deptId:deptScore.surveyDetail.deptId,
                         deptName:deptScore.surveyDetail.deptName,
                         email:deptScore.email,
-                        score:finalScore
+                        score:finalScore,
+                        schemeDetails:schemeScore
 
                     }]
                 }
@@ -1145,6 +1146,162 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
         }
     }
+    export async function getSurveyStatus(req: Request, res: Response) {
+        try{
+            const surveyData:any = await surveyModal.find({IsOnGoingSurvey:"OnGoing"})
+            // const survey = surveyModal.find({IsActive:true})
+            console.log(surveyData,"joooo")
+            const result = await submitSurveyModal.find({surveyId:surveyData[0]._id})
+            const dept = await deptModal.find({ 'IsActive': true,'isDisable':false, })
+            let zone:any = await zoneModal.aggregate([
+                { $unwind: "$blocks" },
+                { $unwind: "$blocks.taluka.villages" },
+                {
+                    $project: {
+                        _id: 1,
+                        districtName: 1,
+                        villageName: "$blocks.taluka.villages.villageName",
+                        villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
+                    }
+                }])
+
+              
+            let data = result.map((village)=>{
+                
+                return village.villageUniqueId
+            })
+    
+    
+            console.log(data)
+    
+           let submitSurvetDeptScore:any = []
+            result.map((deptScore:any)=>{
+                let singleSurveuObj:any = {}
+                let finalScore = 0
+                // let allSchemaData:any = []
+                deptScore.surveyDetail.schemeDetails.map((schemeScore:any)=>{
+                    schemeScore.questionnaire.map((questionScore)=>{
+                          finalScore = finalScore + questionScore.score
+                        //   allSchemaData.push(questionScore)
+                    })
+                    singleSurveuObj = {
+                        villageName:deptScore.villageName,
+                        villageUniqueId:deptScore.villageUniqueId,
+                        email:deptScore.email,
+                        surveyId:deptScore.surveyId,
+                        totalScore:deptScore.totalScore,
+                        departmants:[{
+                            deptId:deptScore.surveyDetail.deptId,
+                            deptName:deptScore.surveyDetail.deptName,
+                            email:deptScore.email,
+                            score:finalScore,
+                            schemeDetails:deptScore.surveyDetail.schemeDetails
+    
+                        }]
+                    }
+                })
+    
+                
+    
+               
+    
+                submitSurvetDeptScore.push(singleSurveuObj)
+    
+            })
+              
+            let arrOfResult:any = []
+            submitSurvetDeptScore.map((matchVillage:any,index,arr)=>{
+                let objOfResult:any ={
+                    "villageName": matchVillage.villageName,
+                    "villageUniqueId": matchVillage.villageUniqueId,
+                    "surveyId":matchVillage.surveyId,
+                    "email":matchVillage.email,
+                    "totalScore": matchVillage.totalScore,
+                    "departmants":[]
+                }
+    
+                submitSurvetDeptScore.map((filter:any)=>{
+                    
+                    if(filter.villageUniqueId == matchVillage.villageUniqueId)
+                    {
+                            objOfResult.departmants.push(filter.departmants[0])
+                    }
+                })
+    
+                arrOfResult.push(objOfResult)
+                    
+    
+            })
+    
+    
+    
+            let newArrayOfResult :any = []
+    
+            for(let singleObj of arrOfResult){
+                if(newArrayOfResult.length == 0){
+                    newArrayOfResult.push(singleObj)
+                }else{
+                    if( ! newArrayOfResult.find((obj : any)=>obj.villageUniqueId == singleObj.villageUniqueId)){
+                        newArrayOfResult.push(singleObj)
+                    }
+                }
+            }
+            let startRange = req.body.startRange
+            let endRange = req.body.endRange
+    
+            if(endRange > newArrayOfResult.length)
+            {
+                endRange = newArrayOfResult.length
+            }
+    
+            let finalNewArrayOfData:any = []
+            for(let range=0 ; range<newArrayOfResult.length ; range++)
+            {
+            let deptTotalScore = 0
+          
+            
+                newArrayOfResult[range].departmants.map((scr)=>{
+                    deptTotalScore = deptTotalScore + scr.score
+                })
+                  finalNewArrayOfData.push({...newArrayOfResult[range],deptTotalScore})
+            }
+    
+            
+             let sortedArray = finalNewArrayOfData.sort((a, b) => b.deptTotalScore - a.deptTotalScore)
+             let arrayWithRank:any = []
+             sortedArray.map((rank,index)=>{
+                 arrayWithRank.push({
+                    "rank":index+1,
+                    ...rank
+                 })
+             })
+               
+             let isDepartmentComplete = arrayWithRank.map((check)=>{
+                return check.departmants.length == dept.length
+             })
+
+             if(isDepartmentComplete.includes(false))
+             {
+                res.status(200).json({mssg:"survay is not completed",zone:zone.length})
+             }
+             else
+             {
+                if(isDepartmentComplete.length == zone.length)
+                {
+                    let changeStatus =  await surveyModal.findByIdAndUpdate({_id:surveyData[0]._id,IsOnGoingSurvey:"completed"})
+
+                    res.json({mssg:"successs",zone})
+                }
+             }
+             
+            // res.status(200).json({data:zone})
+    
+           }
+        catch(err)
+        {
+            res.json(err)
+        }
+    }
 export async function getHighScoreVillage(req: Request, res: Response) {
     const { surveyId } = req.params;
     try {
@@ -1232,4 +1389,6 @@ function calculateMedianScore(scores) {
     }
     return sortedScores[middle];
 }
+
+
 
