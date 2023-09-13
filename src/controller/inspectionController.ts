@@ -626,7 +626,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
         const surveyData:any = await surveyModal.find({IsOnGoingSurvey:"OnGoing"})
 
-        const result = await submitSurveyModal.find({surveyId:req.params.id?req.params.id:surveyData._id})
+        const result = await submitSurveyModal.find({})
           
         let data = result.map((village)=>{
             
@@ -637,6 +637,8 @@ export async function getDashBoardDetail(req: Request, res: Response) {
         console.log(data)
 
        let submitSurvetDeptScore:any = []
+
+       
         result.map((deptScore:any)=>{
             let singleSurveuObj:any = {}
             let finalScore = 0
