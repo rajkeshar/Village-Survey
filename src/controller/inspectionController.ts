@@ -165,7 +165,7 @@ export async function submitSurvey(req: Request, res: Response) {
             const existingSurvey = await submitSurveyModal.findOne(
                 {
                     $and: [
-                        { 'villageUniqueId': villageId }, { 'surveyDetail.deptId': { $in: deptIdsAsObjectIds } }
+                        { 'villageUniqueId': villageId },{surveyId:surveyId}, { 'surveyDetail.deptId': { $in: deptIdsAsObjectIds } }
                     ]
                 });
 
