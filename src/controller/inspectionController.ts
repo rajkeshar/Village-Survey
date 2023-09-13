@@ -623,7 +623,10 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
     export async function topRankingVilaages(req: Request, res: Response) {
        try{
-        const result = await submitSurveyModal.find({})
+
+        const surveyData:any = await surveyModal.find({IsOnGoingSurvey:"OnGoing"})
+
+        const result = await submitSurveyModal.find({surveyId:req.params.id?req.params.id:surveyData._id})
           
         let data = result.map((village)=>{
             
@@ -1286,7 +1289,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
              if(isDepartmentComplete.includes(false))
              {
-                res.status(200).json({mssg:"survay is not completed",zone:zone.length})
+                res.status(200).json({mssg:"survay is not completed",zone:arrayWithRank})
              }
              else
              {
