@@ -624,10 +624,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
     export async function topRankingVilaages(req: Request, res: Response) {
        try{
-
-        const surveyData:any = await surveyModal.find({IsOnGoingSurvey:"OnGoing"})
-
-        const result = await submitSurveyModal.find({surveyId:req.params.id?req.params.id:surveyData._id})
+        const result = await submitSurveyModal.find({})
           
         let data = result.map((village)=>{
             
@@ -1163,10 +1160,6 @@ export async function getDashBoardDetail(req: Request, res: Response) {
     export async function getSurveyStatus(req: Request, res: Response) {
         try{
             const surveyData:any = await surveyModal.find({IsOnGoingSurvey:"OnGoing"})
-            if(surveyData.length == 0)
-            {
-               return res.status(200).json({mssg:"survey is not completed"})
-            }
             // const survey = surveyModal.find({IsActive:true})
             console.log(surveyData,"joooo")
             const result = await submitSurveyModal.find({surveyId:surveyData[0]._id})
@@ -1190,7 +1183,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
             })
     
     
-            console.log(result)
+            console.log(data)
     
            let submitSurvetDeptScore:any = []
             result.map((deptScore:any)=>{
@@ -1242,7 +1235,7 @@ export async function getDashBoardDetail(req: Request, res: Response) {
                     
                     if(filter.villageUniqueId == matchVillage.villageUniqueId)
                     {
-                            objOfResult.departmants.push(filter.departmants?filter.departmants[0]:"")
+                            objOfResult.departmants.push(filter.departmants[0])
                     }
                 })
     
@@ -1300,13 +1293,13 @@ export async function getDashBoardDetail(req: Request, res: Response) {
 
              if(isDepartmentComplete.includes(false))
              {
-                res.status(200).json({mssg:"survay is not completed",zone:arrayWithRank})
+                res.status(200).json({mssg:"survay is not completed",zone:zone.length})
              }
              else
              {
                 if(isDepartmentComplete.length == zone.length)
                 {
-                    let changeStatus =  await surveyModal.findByIdAndUpdate(surveyData[0]._id,{IsOnGoingSurvey:"completed"})
+                    let changeStatus =  await surveyModal.findByIdAndUpdate({_id:surveyData[0]._id,IsOnGoingSurvey:"completed"})
 
                     res.json({mssg:"successs",zone})
                 }
@@ -1317,7 +1310,6 @@ export async function getDashBoardDetail(req: Request, res: Response) {
            }
         catch(err)
         {
-            console.log(err)
             res.json(err)
         }
     }
