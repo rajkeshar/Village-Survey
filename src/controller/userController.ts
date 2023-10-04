@@ -69,24 +69,24 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
     if (!email || !password)
       return res
         .status(400)
-        .json({ message: "Email and Password is required" });
+        .json({ message: "Email and Password is required",status:400 });
 
     const user = (await userModal.findOne({
       email: email,
       IsActive: true,
     })) as any;
-    if (!user) return res.status(400).json({ message: "User Is not exist" });
+    if (!user) return res.status(400).json({ message: "User Is not exist",status:400 });
     if (user) {
       if (type == "web" && type) {
         if (user.role == "VillageManager") {
-          return res.status(400).json({ message: "User Is not exist" });
+          return res.status(400).json({ message: "User Is not exist",status:400 });
         }
       } else {
         if (user.role == "DistrictManager") {
-          return res.status(400).json({ message: "User Is not exist" });
+          return res.status(400).json({ message: "User Is not exist",status:400 });
         }
         if (user.role == "admin") {
-            return res.status(400).json({ message: "User Is not exist" });
+            return res.status(400).json({ message: "User Is not exist",status:400 });
           }
       }
     }
@@ -95,7 +95,7 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
       validPassword = await bcrypt.compare(password, user.password);
     }
     if (!validPassword) {
-      return res.json({ message: "password is invalid" });
+      return res.json({ message: "password is invalid",status:400 });
     }
 
     user.password = "";
@@ -107,6 +107,7 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
         token: token,
         data: user,
         success: true,
+        status:200
       });
   } catch (error) {
     console.log(error);
@@ -116,8 +117,66 @@ export async function logIn(req: Request, res: Response, next: NextFunction) {
         message: "Internal Server Error",
         error: JSON.stringify(error),
         success: false,
+        status:500
       });
   }
+}
+
+export async function listOfAssignUserDeptVillage(req: Request, res: Response) {
+  try{
+    let result:any = await zoneModal.aggregate([
+      { $unwind: "$blocks" },
+      { $unwind: "$blocks.taluka.villages" },
+      {
+          $project: {
+              _id: 1,
+              districtName: 1,
+              villageName: "$blocks.taluka.villages.villageName",
+              villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
+          }
+      }])
+
+      let users = await   userModal.find({IsActive:true})
+      let dept = await deptModal.find({isDisable:false,IsActive:true})
+      let assignData:any = []
+      users.map((userList:any)=>{
+          userList.AssignVillage.villages.map((village:any)=>{
+            result.map((oneVillage)=>{
+                 if(oneVillage.villageUniqueId == village)
+                 {
+                  assignData.push({...oneVillage,name:userList.fullname,email:userList.email,userId:userList._id})
+                 }
+            })
+
+          })
+
+          
+      })
+      let assignDeptAndVillageData:any = []
+      // dept.map((deptData:any)=>{
+      //     assignData.map((assignData)=>{
+      //        assignDeptAndVillageData.push({...assignData,deptName:deptData.deptName,deptId:deptData._id})
+      //     })
+      // })
+      let newArr:any = []
+      assignData.map((assign)=>{
+            dept.map((deptdta)=>{
+              newArr.push({...assign,deptId:deptdta._id, deptName:deptdta.deptName})
+            })
+      })
+      
+   
+      
+
+      res.json({newArr})
+  }
+  catch(err)
+  {
+    console.log(err)
+    res.json(err)
+
+  }
+  
 }
 export async function superAdminRegister(req: Request, res: Response) {
   let searchQuery = {
@@ -126,7 +185,7 @@ export async function superAdminRegister(req: Request, res: Response) {
   };
   const isSuperAdminLength = await userModal.findOne(searchQuery);
   if (isSuperAdminLength)
-    return res.status(400).json({ message: "Superadmin already exist" });
+    return res.status(400).json({ message: "Superadmin already exist",status:400 });
   await createUser(req, "superadmin", res);
 }
 export async function createUser(req: any, role: string, res: Response) {
@@ -460,14 +519,14 @@ export async function forgetPassword(req: Request, res: Response) {
         const token = generateAccessToken(existingUser);
         return res
           .status(201)
-          .json({ message: "OTP send successfully", data: token });
+          .json({ message: "OTP send successfully", data: token , status:200,success:true });
       })
       .catch((error) => {
         console.error(error);
       });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error",status:500,success:false  });
   }
 }
 
@@ -609,7 +668,7 @@ export async function villageAssignmentForSurveyor(
     let { id } = req.params;
     let villageUniqueIds = req.body.Village;
 
-    let existUser = await userModal.findOne({
+    let existUser:any = await userModal.findOne({
       _id: new mongoose.Types.ObjectId(req.params?.id),
       IsActive: true,
     });
@@ -623,41 +682,77 @@ export async function villageAssignmentForSurveyor(
         .json({
           message: `User is not inspector. Kindly make this profile Inspector!`,
         });
-    let result = (await userModal.findOneAndUpdate(
-      { _id: new mongoose.Types.ObjectId(id) },
-      { $addToSet: { "AssignVillage.villages": { $each: villageUniqueIds } } },
-      { new: true }
-    )) as any;
-    await userModal.findOneAndUpdate(
-      { _id: new mongoose.Types.ObjectId(id), IsActive: true },
-      { $set: { "AssignVillage.userId": new mongoose.Types.ObjectId(id) } },
-      { new: true }
-    );
-    if (!result) {
-      return res
-        .status(400)
-        .json({ message: `Department Array is not updated!` });
-    }
-    // let deptIds = result.Departments as any;
 
-    // for (let villageUniqueId = 0; villageUniqueId < villageUniqueIds.length; villageUniqueId++) {
-    //     let uniqId = villageUniqueIds[villageUniqueId];
-    //     let zone = await zoneModal.findOne(
-    //         { "blocks.taluka.villages": { $elemMatch: { "villageUniqueId": uniqId } } },
-    //         { "blocks.$": 1 }) as any
-    //     let blockUniqueId = zone.blocks[0].blockUniqueId;
-    //     let result = await zoneModal.findOneAndUpdate(
-    //         { "blocks.taluka.villages.villageUniqueId": uniqId },
-    //         { $addToSet: { "blocks.$[block].taluka.villages.$[village].departments": { $each: deptIds } } },
-    //         { arrayFilters: [{ "block.blockUniqueId": blockUniqueId }, { "village.villageUniqueId": uniqId }] })
-    // }
-    return res
-      .status(201)
-      .json({
-        message: `village assign successfully.`,
-        data: result,
-        success: true,
-      });
+        const villagesAlreadyAssignedToOtherUsers = await userModal.find({
+          'AssignVillage.villages': { $in: villageUniqueIds },
+          _id: { $ne: id },
+        });
+
+        const assignedToOtherUsers = villagesAlreadyAssignedToOtherUsers.flatMap(
+          (otherUser:any) => otherUser.AssignVillage.villages
+        );
+    
+        // Get the village IDs that are not assigned to the specified user but are assigned to other users
+        const villagesAssignedToOtherUsers = villageUniqueIds.filter(
+          (villageId) => assignedToOtherUsers.includes(villageId) && !existUser.AssignVillage.villages.includes(villageId)
+        );
+    
+        // let newArray = []
+        if (villagesAlreadyAssignedToOtherUsers.length > 0) {
+          let newArray = villageUniqueIds.filter(item => !villagesAssignedToOtherUsers.includes(item))
+          // console.log(filterdArrayIDsOFVillage)
+          // return res.status(400).json({ message: 'Some villages are already assigned to other users.',villagesAssignedToOtherUsers,newArray });
+          let result = (await userModal.findOneAndUpdate(
+            { _id: new mongoose.Types.ObjectId(id) },
+            { $addToSet: { "AssignVillage.villages": { $each: newArray } } },
+            { new: true }
+          )) as any;
+          await userModal.findOneAndUpdate(
+            { _id: new mongoose.Types.ObjectId(id), IsActive: true },
+            { $set: { "AssignVillage.userId": new mongoose.Types.ObjectId(id) } },
+            { new: true }
+          );
+          if (!result) {
+            return res
+              .status(400)
+              .json({ message: `Department Array is not updated!` });
+          }
+        
+          return res
+            .status(201)
+            .json({
+              message: `village assign successfully.`,
+              data: result,
+              success: true,
+            });
+       
+        }
+        else{
+          let result = (await userModal.findOneAndUpdate(
+            { _id: new mongoose.Types.ObjectId(id) },
+            { $addToSet: { "AssignVillage.villages": { $each: villageUniqueIds } } },
+            { new: true }
+          )) as any;
+          await userModal.findOneAndUpdate(
+            { _id: new mongoose.Types.ObjectId(id), IsActive: true },
+            { $set: { "AssignVillage.userId": new mongoose.Types.ObjectId(id) } },
+            { new: true }
+          );
+          if (!result) {
+            return res
+              .status(400)
+              .json({ message: `Department Array is not updated!` });
+          }
+        
+          return res
+            .status(201)
+            .json({
+              message: `village assign successfully.`,
+              data: result,
+              success: true,
+            });
+        }
+   
   } catch (error) {
     console.log(error);
     return res
@@ -1247,6 +1342,22 @@ export async function getRemaingVillageNAmeByUserID(
         },
       },
     ]);
+    const dept:any = await  deptModal.find({IsActive:true,isDisable:false})
+   let remainingData = dept.filter((deptData)=>{
+      return !user?.AssignDepartments?.departments.includes(deptData._id)
+   })
+
+   let elseDept:any = []
+
+   remainingData.map((elseData)=>{
+     elseDept.push({
+      deptName:elseData.deptName,
+      deptId:elseData._id
+
+     })
+   })
+    // console.log(remainingData)
+   
     // const villageArray = result[0]?.blocks.flatMap(block =>
     //     block?.taluka?.villages
     //       .filter(village => array.includes(village.villageUniqueId))
@@ -1265,13 +1376,38 @@ export async function getRemaingVillageNAmeByUserID(
     //     result[village.talukaName] = [village.villageName];
     //     }
     // }
+    let finalRemainingData:any = []
+
+    villages.map((villDataForCombination:any)=>{
+      elseDept.map((elseDeptData:any)=>{
+        finalRemainingData.push({
+          villageName:villDataForCombination.villageName,
+          deptName:elseDeptData.deptName
+        })
+      })
+    })
+    if(finalRemainingData.length == 0)
+    {
+      return res
+      .status(400)
+      .json({
+        message: "Successfully fetched village name",
+        remainingData:finalRemainingData,
+        success: true,
+        status:400
+      });
+    }
+    else
+    {
     return res
       .status(201)
-      .send({
+      .json({
         message: "Successfully fetched village name",
-        data: villages,
+        remainingData:finalRemainingData,
         success: true,
+        status:200
       });
+    }
   } catch (error) {
     console.log(error);
     return res
@@ -1280,6 +1416,7 @@ export async function getRemaingVillageNAmeByUserID(
         message: "Internal Server Error",
         error: JSON.stringify(error),
         success: false,
+        status:500
       });
   }
 }

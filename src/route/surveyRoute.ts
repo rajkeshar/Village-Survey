@@ -1,5 +1,5 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
-import { addNewSurvey,getSurveyStatus,checkMatrix,isOnGoingSurveyTrue,progressDetailofSurvey, changeSurveyStatusToFalse,changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey, submitSurvey, monthlySurveyCompleted, getInspectionsDetails, getScoreBiseRank, getDashBoardDetail,departmantQuestionRankData,topRankingVilaages,topRankingDepartmants, getHighScoreVillage } from '../controller/inspectionController';
+import { addNewSurvey,topRankingVilaagesElseQuestion,getSurveyStatus,getSurveyStatusById,checkMatrix,isOnGoingSurveyTrue,progressDetailofSurvey, changeSurveyStatusToFalse,changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey, submitSurvey, monthlySurveyCompleted, getInspectionsDetails, getScoreBiseRank, getDashBoardDetail,departmantQuestionRankData,topRankingVilaages,topRankingDepartmants, getHighScoreVillage } from '../controller/inspectionController';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
 
@@ -20,11 +20,15 @@ router.get('/getrankbisescore/:surveyId', getScoreBiseRank)
 router.get('/getprogressdetailofsurvey/:surveyId', progressDetailofSurvey)
 router.get('/getdashboarddetail/:surveyId', getDashBoardDetail)
 router.get('/gethighscore/:surveyId', getHighScoreVillage)
-router.post('/topRankingVilaages',topRankingVilaages)
+router.post('/topRankingVilaages/:id',topRankingVilaages)
+router.post('/topRankingVilaagesElseQuestion/:id',topRankingVilaagesElseQuestion)
+
 router.post('/topRankingDepartmantVillages/',topRankingDepartmants)
 router.post('/questionList/',departmantQuestionRankData)
 router.get('/checkMatrix/',checkMatrix)
 router.get('/checkSurveyStatus/', getSurveyStatus)
+router.get('/checkSurveyStatus/:id', getSurveyStatusById)
+
 
 
 
