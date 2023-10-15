@@ -1,6 +1,6 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
 import {checkRole} from '../utils/user-auth'
-import { getUserById,deleteUser,getSelectedVillageList, forgetPassword,departmentAssignmentForSurveyor, logIn,getAllUser, loginSuperAdmin, signUp, superAdminRegister, updateUser,  verifyOTP, makeInspectoreProfile, villageAssignmentForSurveyor, checkDuplicateDeparmentAssignInVillage, getUserAssignedVillageAndDepartment, pullVillageFromSurveyor, pullDepartmentsFromSurveyor, getAssignVillageName, getRemaingVillageNAmeByUserID} from '../controller/userController';
+import { getUserById,deleteUser,getSelectedVillageList,listOfAssignUserDeptVillage, forgetPassword,departmentAssignmentForSurveyor, logIn,getAllUser, loginSuperAdmin, signUp, superAdminRegister, updateUser,  verifyOTP, makeInspectoreProfile, villageAssignmentForSurveyor, checkDuplicateDeparmentAssignInVillage, getUserAssignedVillageAndDepartment, pullVillageFromSurveyor, pullDepartmentsFromSurveyor, getAssignVillageName,numberOfVillageRemaingCount, getRemaingVillageNAmeByUserID} from '../controller/userController';
 import { authenticateToken } from '../middleware/auth';
 const router = express.Router();
 
@@ -27,10 +27,14 @@ router.post('/makeinspectoretouser/:id',  makeInspectoreProfile)
 router.post('/checkmatrix',  checkDuplicateDeparmentAssignInVillage)
 router.get('/getuservillageanddept/:id',  getUserAssignedVillageAndDepartment)
 router.get('/selectedVillage/:id',  getSelectedVillageList)
+router.get('/listOfAssignUserDeptVillage/',  listOfAssignUserDeptVillage)
+
 
 router.post('/deselectvillagefromuser/:id',  pullVillageFromSurveyor)
 router.post('/deselectdeptfromuser/:id',  pullDepartmentsFromSurveyor)
-router.get('/getremainingvillagenamebyuserid/:id',  getRemaingVillageNAmeByUserID)
+router.get('/getremainingvillagenamebyuserid/:id/:surveyId',  getRemaingVillageNAmeByUserID)
+router.get('/numberOfVillageRemaingCount/:id/:surveyId',  numberOfVillageRemaingCount)
+
 
 
 export default router;
