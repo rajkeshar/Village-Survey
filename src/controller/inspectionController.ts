@@ -8,6 +8,7 @@ import zoneModal from '../modal/zoneModal';
 import moment from 'moment';
 import userModal from '../modal/userModal';
 import axios from 'axios';
+import publiceSurveyModal from '../modal/publiceSurveyModel';
 
 export async function addNewSurvey(req: Request, res: Response) {
     try {
@@ -79,12 +80,12 @@ export async function isOnGoingSurveyTrue(req: Request, res: Response) {
     try {
         let filter = { "IsOnGoingSurvey": "OnGoing", 'IsActive': true };
         let existingDoc = await surveyModal.findOne(filter);
-        if (!existingDoc) return res.status(400).json({ message: "There is no OnGoing Survey", "status": 400 });
+        if (!existingDoc) return res.status(400).json({ message: "There is no OnGoing Survey", "status": 400,data:"" });
 
         return res.status(201).json({ message: "fetched successfully", success: true, data: existingDoc, "status": 200 })
     } catch (error) {
         console.log(error);
-        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false, "status": 500 })
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false, "status": 500,data:"" })
     }
 }
 export async function changeSurveyStatus(req: Request, res: Response) {
@@ -144,12 +145,12 @@ export async function submitSurvey(req: Request, res: Response) {
         let { villageId, deptDetails, surveyorLoginId, villageName } = req.body;
         console.log(req.body)
         if (!surveyId) {
-            return res.status(400).json({ message: "SurveyId is required",status:400 })
+            return res.status(400).json({ message: "SurveyId is required",status:400,data:"" })
         }
         //check that survyor is authorize to submit the survey or not
         const user = await userModal.findOne({ email: surveyorLoginId, isInspector: true })
 
-        if (!user) res.status(400).json({ message: "User not found or He is not Inspector",status:400 })  // user not found
+        if (!user) res.status(400).json({ message: "User not found or He is not Inspector",status:400,data:[] })  // user not found
         else {
 
             const uniqueDeptIds = [...new Set(deptDetails.map((obj) => obj.deptId))];
@@ -169,7 +170,7 @@ export async function submitSurvey(req: Request, res: Response) {
                     ]
                 });
 
-            if (existingSurvey) { return res.status(400).json({ message: `A survey for village and department  has already been saved.`, data: villageId,status:400 }) };
+            if (existingSurvey) { return res.status(400).json({ message: `A survey for village and department  has already been saved.`, data: [],status:400 }) };
 
             // continue saving the survey
 
@@ -205,7 +206,7 @@ export async function submitSurvey(req: Request, res: Response) {
                             }
                         }, { new: true });
                     if (!updatedSurvey) {
-                        return res.status(400).send({ message: "This Id is not found, Invalid ID",status:400 })
+                        return res.status(400).send({ message: "This Id is not found, Invalid ID",status:400,data:[] })
                     }
                 }
 
@@ -354,13 +355,13 @@ export async function submitSurvey(req: Request, res: Response) {
                 return res.status(201).json({ message: "survey submitted successfully", success: true, data: scoring,status:200 })
             } else {
                 // user not authorized to save survey for this village and department
-                return res.status(400).json({ message: "Surveyor might be storing wrong village and dept data",status:400 })
+                return res.status(400).json({ message: "Surveyor might be storing wrong village and dept data",status:400,data:[] })
             }
         }
     }
     catch (error) {
         console.log(error);
-        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false,status:500 })
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false,status:500,data:"" })
     }
 }
 async function surveySubmitSuccessfullyMessageSendToInspector(email: string, newPhoneNumber, villageId: any) {
@@ -784,10 +785,11 @@ console.log(arrayWithRank);
 
     export async function topRankingVilaagesElseQuestion(req: Request, res: Response) {
         try{
- 
+          const email:any = req.query.email
+          const search:any = req.query.search
          const surveyData:any = await surveyModal.find({IsOnGoingSurvey:"OnGoing"})
          // const fixId = req.params.id == 0 ?req.params.id:surveyData[0]._id
-         const result = await submitSurveyModal.find({surveyId:req.params.id})
+         const result = await submitSurveyModal.find({surveyId:req.params.id,email:email})
            
          let data = result.map((village)=>{
              
@@ -795,7 +797,7 @@ console.log(arrayWithRank);
          })
  
  
-         console.log(data)
+        //  console.log(data)
  
         let submitSurvetDeptScore:any = []
  
@@ -815,6 +817,7 @@ console.log(arrayWithRank);
                      surveyId:deptScore.surveyId,
                      totalScore:deptScore.totalScore,
                      departmants:[{
+                         villageName:deptScore.villageName,
                          deptId:deptScore.surveyDetail.deptId,
                          deptName:deptScore.surveyDetail.deptName,
                          email:deptScore.email,
@@ -832,7 +835,7 @@ console.log(arrayWithRank);
          })
            
          let arrOfResult:any = []
-         console.log(submitSurvetDeptScore)
+        //  console.log(submitSurvetDeptScore)
          submitSurvetDeptScore.map((matchVillage:any,index,arr)=>{
              if(matchVillage)
              {
@@ -909,11 +912,32 @@ console.log(arrayWithRank);
  
           if(arrayWithRank.length == 0)
           {
+            
             res.status(200).json({mssg:"No Data Found",status:400,data:arrayWithRank,btn:newArrayOfResult.length/5})
 
           }
           else{
+            if(search)
+            {
+
+               let newFilterArr = arrayWithRank.filter((searching) => 
+               {
+                return searching.villageName.toLowerCase().includes(search.toLowerCase())
+               })
+               if(newFilterArr.length == 0)
+               {
+                res.status(200).json({mssg:"No Data Found",status:400,data:newFilterArr,btn:newArrayOfResult.length/5})
+
+               }
+               else
+               {
+                 res.status(200).json({mssg:"success",status:200,data:newFilterArr,btn:newArrayOfResult.length/5})
+               }
+
+            }
+            else{
              res.status(200).json({mssg:"success",status:200,data:arrayWithRank,btn:newArrayOfResult.length/5})
+            }
           }
         }
         catch(error)
@@ -923,6 +947,247 @@ console.log(arrayWithRank);
  
         }
      }
+
+     export async function topRankingVilagesDataForPublice(req: Request, res: Response) {
+        try{
+        //   const email:any = req.query.email
+          const search:any = req.query.search
+         const surveyData:any = await surveyModal.find({IsOnGoingSurvey:"OnGoing"})
+         // const fixId = req.params.id == 0 ?req.params.id:surveyData[0]._id
+         const result = await submitSurveyModal.find({surveyId:req.params.id})
+           
+         let data = result.map((village)=>{
+             
+             return village.villageUniqueId
+         })
+ 
+ 
+        //  console.log(data)
+ 
+        let submitSurvetDeptScore:any = []
+ 
+        
+         result.map((deptScore:any)=>{
+             let singleSurveuObj:any = {}
+             let finalScore = 0
+ 
+             deptScore.surveyDetail.schemeDetails.map((schemeScore:any)=>{
+                 schemeScore.questionnaire.map((questionScore)=>{
+                       finalScore = finalScore + questionScore.score
+                 })
+                 singleSurveuObj = {
+                     villageName:deptScore.villageName,
+                     villageUniqueId:deptScore.villageUniqueId,
+                     email:deptScore.email,
+                     surveyId:deptScore.surveyId,
+                     totalScore:deptScore.totalScore,
+                     departmants:[{
+                         villageName:deptScore.villageName,
+                         deptId:deptScore.surveyDetail.deptId,
+                         deptName:deptScore.surveyDetail.deptName,
+                         email:deptScore.email,
+                         score:finalScore,
+                     }]
+                 }
+             })
+ 
+             
+ 
+            
+ 
+             submitSurvetDeptScore.push(singleSurveuObj)
+ 
+         })
+           
+         let arrOfResult:any = []
+        //  console.log(submitSurvetDeptScore)
+         submitSurvetDeptScore.map((matchVillage:any,index,arr)=>{
+             if(matchVillage)
+             {
+             let objOfResult:any ={
+                 "villageName": matchVillage.villageName,
+                 "villageUniqueId": matchVillage.villageUniqueId,
+                 "surveyId":matchVillage.surveyId,
+                 "email":matchVillage.email,
+                 "totalScore": matchVillage.totalScore,
+                 "departmants":[]
+             }
+ 
+             submitSurvetDeptScore.map((filter:any)=>{
+                 
+                 if(filter.villageUniqueId == matchVillage.villageUniqueId)
+                 {
+                     // console.log(filter.departmants,"filter.departmants")
+ 
+                     if(filter.departmants)
+                     {
+                         objOfResult.departmants.push(filter.departmants[0])
+                     }
+                 }
+             })
+ 
+             arrOfResult.push(objOfResult)
+         }
+ 
+         })
+ 
+ 
+ 
+         let newArrayOfResult :any = []
+ 
+         for(let singleObj of arrOfResult){
+             if(newArrayOfResult.length == 0){
+                 newArrayOfResult.push(singleObj)
+             }else{
+                 if( ! newArrayOfResult.find((obj : any)=>obj.villageUniqueId == singleObj.villageUniqueId)){
+                     newArrayOfResult.push(singleObj)
+                 }
+             }
+         }
+         let startRange = req.body.startRange
+         let endRange = req.body.endRange
+ 
+         if(endRange > newArrayOfResult.length)
+         {
+             endRange = newArrayOfResult.length
+         }
+ 
+         let finalNewArrayOfData:any = []
+         for(let range=0 ; range<newArrayOfResult.length ; range++)
+         {
+         let deptTotalScore = 0
+       
+         
+             newArrayOfResult[range].departmants.map((scr)=>{
+                 deptTotalScore = deptTotalScore + scr.score
+             })
+               finalNewArrayOfData.push({...newArrayOfResult[range],deptTotalScore})
+         }
+ 
+         
+          let sortedArray = finalNewArrayOfData.sort((a, b) => b.deptTotalScore - a.deptTotalScore)
+          let arrayWithRank:any = []
+          console.log(sortedArray)
+          sortedArray.map((rank,index)=>{
+              arrayWithRank.push({
+                 "rank":index+1,
+                 ...rank
+              })
+          })
+ 
+          if(arrayWithRank.length == 0)
+          {
+            
+            res.status(200).json({mssg:"No Data Found",status:400,data:arrayWithRank,btn:newArrayOfResult.length/5})
+
+          }
+          else{
+            if(search)
+            {
+
+               let newFilterArr = arrayWithRank.filter((searching) => 
+               {
+                return searching.villageName.toLowerCase().includes(search.toLowerCase())
+               })
+               if(newFilterArr.length == 0)
+               {
+                res.status(200).json({mssg:"No Data Found",status:400,data:newFilterArr,btn:newArrayOfResult.length/5})
+
+               }
+               else
+               {
+                 res.status(200).json({mssg:"success",status:200,data:newFilterArr,btn:newArrayOfResult.length/5})
+               }
+
+            }
+            else{
+             res.status(200).json({mssg:"success",status:200,data:arrayWithRank,btn:newArrayOfResult.length/5})
+            }
+          }
+        }
+        catch(error)
+        {
+         console.log(error)
+         res.status(500).json(error)
+ 
+        }
+     }
+     export async function publiceSurveyData(req: Request, res: Response) {
+        try {
+            console.log(req.body)
+            let isSurvey = await publiceSurveyModal.find({surveyId:req.body.surveyId})
+            if(isSurvey.length ==0)
+            {
+            await publiceSurveyModal.updateMany({}, { $set: { isPublice: false } }, { new: true })
+            let surveySave = new publiceSurveyModal({surveyId:req.body.surveyId,isPublice:true,villages:req.body.villages})
+            let survey = await surveySave.save()
+            if(survey)
+            {
+               return res.status(200).json({
+                    status:200,
+                    data:survey,
+                })
+            }
+        }
+        else{
+            await publiceSurveyModal.updateMany({isPublice:true}, { $set: { isPublice: false } }, { new: true })
+            let result = await publiceSurveyModal.findOneAndUpdate({surveyId:req.body.surveyId}, {isPublice:req.body.publice}, { new: true })
+           if(result)
+           {
+           return res.status(200).json({
+                status:200,
+                data:result
+            })
+           }
+        }
+
+        }
+        catch(err){
+            res.status(500).json({
+                status:500,
+                data:[],
+                mssg:"something is wrong"
+            })
+        }
+
+
+    }
+
+    export async function getPubliceSurveyData(req: Request, res: Response) {
+        try {
+          
+        
+
+            let isSurvey = await publiceSurveyModal.find({isPublice: true})
+
+           console.log(isSurvey)
+          if(isSurvey.length != 0)
+          {
+           res.status(200).json({
+            status:200,
+            surveyId:isSurvey[0].surveyId,
+            mssg:"success"
+        })
+    }
+    else{
+        res.status(400).json({
+            status:400,
+            surveyId:"",
+            mssg:"please publish any one survey"
+        })
+    }
+
+        }
+        catch(err){
+            res.status(500).json({
+                status:500,
+                data:[],
+                mssg:"something is wrong"
+            })
+        }
+
+
+    }
 
     export async function checkMatrix(req: Request, res: Response) {
         try {

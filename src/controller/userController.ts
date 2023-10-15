@@ -13,6 +13,7 @@ import zoneModal from "../modal/zoneModal";
 import { ObjectId } from "mongodb";
 import deptModal from "../modal/departmentModal";
 import submitSurveyModal from "../modal/submitSurveyModal";
+import surveyModal from "../modal/inspecionModal";
 dotenv.config();
 let jwtkey = process.env.JWTSECRET_KEY as any;
 async function comparePassword(
@@ -686,6 +687,7 @@ export async function villageAssignmentForSurveyor(
         const villagesAlreadyAssignedToOtherUsers = await userModal.find({
           'AssignVillage.villages': { $in: villageUniqueIds },
           _id: { $ne: id },
+          IsActive: true,
         });
 
         const assignedToOtherUsers = villagesAlreadyAssignedToOtherUsers.flatMap(
@@ -1122,7 +1124,124 @@ export async function pullDepartmentsFromSurveyor(req: Request, res: Response) {
 export async function getAssignVillageName(req: Request, res: Response) {
   let { id } = req.params;
   try {
-    // let user = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
+    let userData = await userModal.findOne({
+      _id: new mongoose.Types.ObjectId(id),
+      IsActive: true,
+    });
+    let idFindOfSurvey = await surveyModal.find({IsOnGoingSurvey:"OnGoing"})
+    if (!userData)
+      return res
+        .status(400)
+        .send({ message: "This id is not exist, Invaild Id" });
+    let villagesIds = userData?.AssignVillage?.villages as any;
+    let deptIds = userData?.AssignDepartments?.departments as any;
+
+    let array = [] as any;
+    // Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
+
+    
+    const pendingVillages = await submitSurveyModal.find({
+      email: userData.email,
+      surveyId:idFindOfSurvey[0]._id
+    });
+
+   let toRemoveArray:any = []
+    pendingVillages.map((findDeptAndVillage:any)=>{
+      toRemoveArray.push({
+          "deptId":findDeptAndVillage.surveyDetail.deptId.toString(),
+          "deptName":findDeptAndVillage.surveyDetail.deptName,
+          "villageUniqueId":findDeptAndVillage.villageUniqueId,
+          "villageName":findDeptAndVillage.villageName,
+          "surveyId":findDeptAndVillage.surveyId
+
+        })
+    })
+
+    // console.log(submitVillagesAndDept,"array")
+
+    let villages = await zoneModal.aggregate([
+      { $unwind: "$blocks" },
+      { $unwind: "$blocks.taluka" },
+      { $unwind: "$blocks.taluka.villages" },
+      {
+        $match: {
+          "blocks.taluka.villages.villageUniqueId": {
+            $nin: array,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$blocks.taluka.villages.villageName",
+          villageUniqueId: { $push: "$blocks.taluka.villages.villageUniqueId" },
+        },
+      },
+      {
+        $project: {
+          villageName: "$_id",
+          villageUniqueId: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+ let AssignUserData =  villages.filter((assignVillages)=>{
+    return villagesIds.includes(assignVillages.villageUniqueId)
+  })
+   console.log(AssignUserData,"AssignUserData")
+
+    const dept:any = await  deptModal.find({IsActive:true,isDisable:false})
+   let remainingData = dept.filter((deptData)=>{
+      return deptIds.includes(deptData._id)
+   })
+
+
+let dataArray:any = []
+AssignUserData.map((numberOfVillages)=>{
+  remainingData.map((numberOfDept)=>{
+    dataArray.push({
+      villageUniqueId:numberOfVillages.villageUniqueId[0],
+      villageName:numberOfVillages.villageName,
+      deptId:numberOfDept._id.toString(),
+      deptName:numberOfDept.deptName
+
+
+    })
+  })
+})
+// let finalNotSubmittedAt:any = []
+// numberOfAssignVillageAndDept.map((notSubmit)=>{
+//   submitVillagesAndDept.map((submited)=>{
+//     if(notSubmit.villageUniqueId != submited.villageUniqueId  )
+//     {
+//       if(notSubmit.deptId != submited.deptId)
+//       {
+//       finalNotSubmittedAt.push(notSubmit)
+//       }
+//     }
+//   })
+// })
+   
+const filteredDataArray = dataArray.map(dataObj => {
+  const matchingRemoveObj = toRemoveArray.find(removeObj => (
+      dataObj.villageUniqueId === removeObj.villageUniqueId &&
+      dataObj.deptId === removeObj.deptId
+  ));
+  
+  return matchingRemoveObj ? null : dataObj;
+})
+.filter(obj => obj !== null);
+
+const uniqueVillageIds:any = new Set(); // To keep track of unique villageUniqueId values
+const deduplicatedArray:any = []; // To store the deduplicated data
+
+for (const item of filteredDataArray) {
+    if (!uniqueVillageIds.has(item.villageUniqueId)) {
+        uniqueVillageIds.add(item.villageUniqueId); // Add the villageUniqueId to the set
+        deduplicatedArray.push(item); // Add the item to the deduplicated array
+    }
+}
+    // let userData = await userModal.find({ _id: new mongoose.Types.ObjectId(id), 'IsActive': true })
     // if (!user.length) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
     // let villagesIds = user[0]?.AssignVillage?.villages as any
 
@@ -1278,8 +1397,7 @@ export async function getAssignVillageName(req: Request, res: Response) {
       .send({
         message: "Successfully fetched village name",
         data: {
-          remaningVillageArrayCount:
-            resultData.length - newArrayOfResult.length,
+          remaningVillageArrayCount:deduplicatedArray.length,
           assignVillageArrayCount: finalArray.length,
           villageArray: finalArray,
           deptList,
@@ -1301,7 +1419,7 @@ export async function getRemaingVillageNAmeByUserID(
   req: Request,
   res: Response
 ) {
-  let { id } = req.params;
+  let { id,surveyId } = req.params;
   try {
     let user = await userModal.findOne({
       _id: new mongoose.Types.ObjectId(id),
@@ -1312,11 +1430,31 @@ export async function getRemaingVillageNAmeByUserID(
         .status(400)
         .send({ message: "This id is not exist, Invaild Id" });
     let villagesIds = user?.AssignVillage?.villages as any;
+    let deptIds = user?.AssignDepartments?.departments as any;
+
     let array = [] as any;
-    Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
+    // Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
+
+    
     const pendingVillages = await submitSurveyModal.find({
       email: user.email,
+      surveyId:surveyId
     });
+
+   let toRemoveArray:any = []
+    pendingVillages.map((findDeptAndVillage:any)=>{
+      toRemoveArray.push({
+          "deptId":findDeptAndVillage.surveyDetail.deptId.toString(),
+          "deptName":findDeptAndVillage.surveyDetail.deptName,
+          "villageUniqueId":findDeptAndVillage.villageUniqueId,
+          "villageName":findDeptAndVillage.villageName,
+          "surveyId":findDeptAndVillage.surveyId
+
+        })
+    })
+
+    // console.log(submitVillagesAndDept,"array")
+
     let villages = await zoneModal.aggregate([
       { $unwind: "$blocks" },
       { $unwind: "$blocks.taluka" },
@@ -1342,57 +1480,63 @@ export async function getRemaingVillageNAmeByUserID(
         },
       },
     ]);
+
+ let AssignUserData =  villages.filter((assignVillages)=>{
+    return villagesIds.includes(assignVillages.villageUniqueId)
+  })
+   console.log(AssignUserData,"AssignUserData")
+
     const dept:any = await  deptModal.find({IsActive:true,isDisable:false})
    let remainingData = dept.filter((deptData)=>{
-      return !user?.AssignDepartments?.departments.includes(deptData._id)
+      return deptIds.includes(deptData._id)
    })
 
-   let elseDept:any = []
 
-   remainingData.map((elseData)=>{
-     elseDept.push({
-      deptName:elseData.deptName,
-      deptId:elseData._id
+let dataArray:any = []
+AssignUserData.map((numberOfVillages)=>{
+  remainingData.map((numberOfDept)=>{
+    dataArray.push({
+      villageUniqueId:numberOfVillages.villageUniqueId[0],
+      villageName:numberOfVillages.villageName,
+      deptId:numberOfDept._id.toString(),
+      deptName:numberOfDept.deptName
 
-     })
-   })
-    // console.log(remainingData)
-   
-    // const villageArray = result[0]?.blocks.flatMap(block =>
-    //     block?.taluka?.villages
-    //       .filter(village => array.includes(village.villageUniqueId))
-    //       .map(({ villageName, villageUniqueId }) => ({ villageName, villageUniqueId }))
-    //   ) || [] as any;
-    // const deptandvill = villageArray.concat(departments) const result = {};
-    // const result = {}
-    // for (const village of villages) {
-    //     if (result[village.talukaName]) {
-    //     // If the talukaName already exists in the result object,
-    //     // push the villageName into the existing array
-    //     result[village.talukaName].push(village.villageName);
-    //     } else {
-    //     // Otherwise, create a new array with the villageName and
-    //     // add it to the result object with the talukaName as the key
-    //     result[village.talukaName] = [village.villageName];
-    //     }
-    // }
-    let finalRemainingData:any = []
 
-    villages.map((villDataForCombination:any)=>{
-      elseDept.map((elseDeptData:any)=>{
-        finalRemainingData.push({
-          villageName:villDataForCombination.villageName,
-          deptName:elseDeptData.deptName
-        })
-      })
     })
-    if(finalRemainingData.length == 0)
+  })
+})
+// let finalNotSubmittedAt:any = []
+// numberOfAssignVillageAndDept.map((notSubmit)=>{
+//   submitVillagesAndDept.map((submited)=>{
+//     if(notSubmit.villageUniqueId != submited.villageUniqueId  )
+//     {
+//       if(notSubmit.deptId != submited.deptId)
+//       {
+//       finalNotSubmittedAt.push(notSubmit)
+//       }
+//     }
+//   })
+// })
+   
+const filteredDataArray = dataArray.map(dataObj => {
+  const matchingRemoveObj = toRemoveArray.find(removeObj => (
+      dataObj.villageUniqueId === removeObj.villageUniqueId &&
+      dataObj.deptId === removeObj.deptId
+  ));
+  
+  return matchingRemoveObj ? null : dataObj;
+})
+.filter(obj => obj !== null);
+
+
+
+    if(filteredDataArray.length == 0)
     {
       return res
       .status(400)
       .json({
         message: "Successfully fetched village name",
-        remainingData:finalRemainingData,
+        remainingData:filteredDataArray,
         success: true,
         status:400
       });
@@ -1403,11 +1547,176 @@ export async function getRemaingVillageNAmeByUserID(
       .status(201)
       .json({
         message: "Successfully fetched village name",
-        remainingData:finalRemainingData,
+        remainingData:filteredDataArray,
         success: true,
         status:200
       });
     }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({
+        message: "Internal Server Error",
+        error: JSON.stringify(error),
+        remainingData:[],
+        success: false,
+        status:500
+      });
+  }
+}
+
+
+export async function numberOfVillageRemaingCount(
+  req: Request,
+  res: Response
+) {
+  let { id,surveyId } = req.params;
+  try {
+    let user = await userModal.findOne({
+      _id: new mongoose.Types.ObjectId(id),
+      IsActive: true,
+    });
+    if (!user)
+      return res
+        .status(400)
+        .send({ message: "This id is not exist, Invaild Id" });
+    let villagesIds = user?.AssignVillage?.villages as any;
+    let deptIds = user?.AssignDepartments?.departments as any;
+
+    let array = [] as any;
+    // Object.entries(villagesIds).forEach(([key, value]) => array.push(value));
+
+    
+    const pendingVillages = await submitSurveyModal.find({
+      email: user.email,
+      surveyId:surveyId
+    });
+
+   let toRemoveArray:any = []
+    pendingVillages.map((findDeptAndVillage:any)=>{
+      toRemoveArray.push({
+          "deptId":findDeptAndVillage.surveyDetail.deptId.toString(),
+          "deptName":findDeptAndVillage.surveyDetail.deptName,
+          "villageUniqueId":findDeptAndVillage.villageUniqueId,
+          "villageName":findDeptAndVillage.villageName,
+          "surveyId":findDeptAndVillage.surveyId
+
+        })
+    })
+
+    // console.log(submitVillagesAndDept,"array")
+
+    let villages = await zoneModal.aggregate([
+      { $unwind: "$blocks" },
+      { $unwind: "$blocks.taluka" },
+      { $unwind: "$blocks.taluka.villages" },
+      {
+        $match: {
+          "blocks.taluka.villages.villageUniqueId": {
+            $nin: array,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$blocks.taluka.villages.villageName",
+          villageUniqueId: { $push: "$blocks.taluka.villages.villageUniqueId" },
+        },
+      },
+      {
+        $project: {
+          villageName: "$_id",
+          villageUniqueId: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+ let AssignUserData =  villages.filter((assignVillages)=>{
+    return villagesIds.includes(assignVillages.villageUniqueId)
+  })
+   console.log(AssignUserData,"AssignUserData")
+
+    const dept:any = await  deptModal.find({IsActive:true,isDisable:false})
+   let remainingData = dept.filter((deptData)=>{
+      return deptIds.includes(deptData._id)
+   })
+
+
+let dataArray:any = []
+AssignUserData.map((numberOfVillages)=>{
+  remainingData.map((numberOfDept)=>{
+    dataArray.push({
+      villageUniqueId:numberOfVillages.villageUniqueId[0],
+      villageName:numberOfVillages.villageName,
+      deptId:numberOfDept._id.toString(),
+      deptName:numberOfDept.deptName
+
+
+    })
+  })
+})
+// let finalNotSubmittedAt:any = []
+// numberOfAssignVillageAndDept.map((notSubmit)=>{
+//   submitVillagesAndDept.map((submited)=>{
+//     if(notSubmit.villageUniqueId != submited.villageUniqueId  )
+//     {
+//       if(notSubmit.deptId != submited.deptId)
+//       {
+//       finalNotSubmittedAt.push(notSubmit)
+//       }
+//     }
+//   })
+// })
+   
+const filteredDataArray = dataArray.map(dataObj => {
+  const matchingRemoveObj = toRemoveArray.find(removeObj => (
+      dataObj.villageUniqueId === removeObj.villageUniqueId &&
+      dataObj.deptId === removeObj.deptId
+  ));
+  
+  return matchingRemoveObj ? null : dataObj;
+})
+.filter(obj => obj !== null);
+
+const uniqueVillageIds:any = new Set(); // To keep track of unique villageUniqueId values
+const deduplicatedArray:any = []; // To store the deduplicated data
+
+for (const item of filteredDataArray) {
+    if (!uniqueVillageIds.has(item.villageUniqueId)) {
+        uniqueVillageIds.add(item.villageUniqueId); // Add the villageUniqueId to the set
+        deduplicatedArray.push(item); // Add the item to the deduplicated array
+    }
+}
+
+const  surveys:any = await surveyModal.findOne({_id:surveyId})
+   console.log(surveys)
+
+   function calculateRemainingDays(startDate, endDate) {
+    const start = startDate;
+    const end = endDate;
+
+    // Calculate the time difference in milliseconds
+    const timeDiff = end - start;
+
+    // Calculate the number of days
+    const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+    return daysRemaining;
+}
+ let startDate = new Date()
+ let endDate = new Date(surveys.surveyEndDate)
+ let remainingDay = calculateRemainingDays(startDate, endDate)
+ 
+    return res
+      .status(200)
+      .json({
+        message: "Successfully fetched village name",
+        data:{remaningVillage:deduplicatedArray.length,remainingDay:remainingDay},
+        success: true,
+        status:200
+      });
   } catch (error) {
     console.log(error);
     return res

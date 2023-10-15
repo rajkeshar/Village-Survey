@@ -31,12 +31,10 @@ router.get('/getalltaluka', getAllTalukaList)
 router.get('/getallremainingvilage', getRemainingVillageFromAssignment)
 router.get('/villagesearch/:searchquery', searchVillageName)
 
-router.put('/edit-taluka/:talukaUniqueId', update_taluka);
-   
+router.put('/edit-taluka/:talukaUniqueId', update_taluka); 
    // Add Taluka
-   router.post('/add-taluka',add_taluka);
-   
+router.post('/add-taluka',add_taluka);  
    // Delete Taluka
-   router.delete('/delete-taluka/:talukaUniqueId', delete_taluka);
+router.delete('/delete-taluka/:talukaUniqueId', delete_taluka);
 
 export default router;

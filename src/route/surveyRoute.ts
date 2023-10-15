@@ -1,5 +1,5 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
-import { addNewSurvey,topRankingVilaagesElseQuestion,getSurveyStatus,getSurveyStatusById,checkMatrix,isOnGoingSurveyTrue,progressDetailofSurvey, changeSurveyStatusToFalse,changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey, submitSurvey, monthlySurveyCompleted, getInspectionsDetails, getScoreBiseRank, getDashBoardDetail,departmantQuestionRankData,topRankingVilaages,topRankingDepartmants, getHighScoreVillage } from '../controller/inspectionController';
+import { addNewSurvey,topRankingVilagesDataForPublice,getPubliceSurveyData,publiceSurveyData,topRankingVilaagesElseQuestion,getSurveyStatus,getSurveyStatusById,checkMatrix,isOnGoingSurveyTrue,progressDetailofSurvey, changeSurveyStatusToFalse,changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey, submitSurvey, monthlySurveyCompleted, getInspectionsDetails, getScoreBiseRank, getDashBoardDetail,departmantQuestionRankData,topRankingVilaages,topRankingDepartmants, getHighScoreVillage } from '../controller/inspectionController';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
 
@@ -21,13 +21,18 @@ router.get('/getprogressdetailofsurvey/:surveyId', progressDetailofSurvey)
 router.get('/getdashboarddetail/:surveyId', getDashBoardDetail)
 router.get('/gethighscore/:surveyId', getHighScoreVillage)
 router.post('/topRankingVilaages/:id',topRankingVilaages)
-router.post('/topRankingVilaagesElseQuestion/:id',topRankingVilaagesElseQuestion)
+router.get('/topRankingVilaagesElseQuestion/:id',topRankingVilaagesElseQuestion)
+
+router.get('/topRankingVilaagesPubliceData/:id',topRankingVilagesDataForPublice)
 
 router.post('/topRankingDepartmantVillages/',topRankingDepartmants)
 router.post('/questionList/',departmantQuestionRankData)
 router.get('/checkMatrix/',checkMatrix)
 router.get('/checkSurveyStatus/', getSurveyStatus)
 router.get('/checkSurveyStatus/:id', getSurveyStatusById)
+router.post('/publiceSurveyData',publiceSurveyData)
+router.get('/getPubliceSurveyData',getPubliceSurveyData)
+
 
 
 
