@@ -9,6 +9,8 @@ import moment from 'moment';
 import userModal from '../modal/userModal';
 import axios from 'axios';
 import publiceSurveyModal from '../modal/publiceSurveyModel';
+import combinationModel from '../modal/combinationOfAssignVillageAndDept';
+import { findAssignVillageAndDept } from './userController';
 
 export async function addNewSurvey(req: Request, res: Response) {
     try {
@@ -148,20 +150,34 @@ export async function submitSurvey(req: Request, res: Response) {
             return res.status(400).json({ message: "SurveyId is required",status:400,data:"" })
         }
         //check that survyor is authorize to submit the survey or not
-        const user = await userModal.findOne({ email: surveyorLoginId, isInspector: true })
+        const user:any = await userModal.findOne({ email: surveyorLoginId, isInspector: true })
 
         if (!user) res.status(400).json({ message: "User not found or He is not Inspector",status:400,data:[] })  // user not found
         else {
-
+           
             const uniqueDeptIds = [...new Set(deptDetails.map((obj) => obj.deptId))];
+        
             const deptIdsAsObjectIds = uniqueDeptIds.map((id: any) => new mongoose.Types.ObjectId(id));
-            const assignedVillages = user?.AssignVillage?.villages;
-            const assignedDepartments = user?.AssignDepartments?.departments;
+           
+
+            let assignDeptAndVillageData = await combinationModel.find({userID:user._id})  
+            
+              let {uniqueVill, uniqueDept} = await findAssignVillageAndDept(assignDeptAndVillageData)
+            const assignedVillages:any = []
+            const assignedDepartments:any = []
+             uniqueVill.map((vill)=>{
+                assignedVillages.push(vill.villageUniqueId)
+             })
+
+             uniqueDept.map((dep)=>{
+                assignedDepartments.push(dep.deptId)
+             })
+          
 
             // check if the user is assigned to the village and department in the request body
-            const isAssignedToVillage = assignedVillages?.find(v => v.toString() === villageId.toString());
-            const isAssignedToDept = deptIdsAsObjectIds?.every((id: any) => assignedDepartments?.includes(id));;
-
+            const isAssignedToVillage = assignedVillages?.find(v => v === villageId.toString());
+            const isAssignedToDept = deptIdsAsObjectIds?.every((id: any) => assignedDepartments?.includes(id.toString()));;
+             
             // check that survey for same village and deptid should not repeated
             const existingSurvey = await submitSurveyModal.findOne(
                 {
@@ -1194,11 +1210,9 @@ console.log(arrayWithRank);
 
             let dist:any = await zoneModal.findOne({ IsActive: true });
             let deptList:any = await deptModal.find({IsActive:true,isDisable:false})
-            let deptListDisable:any = await deptModal.find({IsActive:true,isDisable:true})
-            console.log(deptList.length)
-
-            if (!dist) return res.status(201).send({ message: "District Id or block Id is not found, Invalid ID" })
-            let villageArray = [] as any;
+            let combination = await combinationModel.find({isDisable:false})
+            // if (!dist) return res.status(201).send({ message: "District Id or block Id is not found, Invalid ID" })
+            // let villageArray = [] as any;
             let result:any = await zoneModal.aggregate([
                 { $unwind: "$blocks" },
                 { $unwind: "$blocks.taluka.villages" },
@@ -1207,99 +1221,20 @@ console.log(arrayWithRank);
                         _id: 1,
                         districtName: 1,
                         villageName: "$blocks.taluka.villages.villageName",
-                        villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
+                        villageUniqueId: "$blocks.taluka.villages.villageUniqueId",
+                        isDisable: "$blocks.taluka.villages.isDisable"
+
                     }
                 }])
 
-
-
-               let users = await userModal.find({IsActive:true})
-             
-              let isVillageAndDeptSameUser = false
-              let totalNumberOfVillages:any = []
-              let totalNumberOfDepartmant:any = []
-              let countInside = 0
-               users.map((checkSameVillageAndSameDept:any,index:any)=>{
-                console.log(checkSameVillageAndSameDept.AssignVillage.villages.length,"true" )
-                 if(checkSameVillageAndSameDept.AssignVillage.villages.length == result.length)
-                 {
-                     if(checkSameVillageAndSameDept.AssignDepartments.departments.length == deptList.length)
-                     {
-                        console.log("dept true")
-                        isVillageAndDeptSameUser = true
-                     }
-                 }
-                   
-                 if(checkSameVillageAndSameDept.AssignVillage.villages.length != 0)
-                 {
-                    checkSameVillageAndSameDept.AssignDepartments.departments.map((dep:any)=>{
-                        totalNumberOfDepartmant.push(dep)
-                  }) 
-                  countInside = countInside + 1
-                 }
-                 checkSameVillageAndSameDept.AssignVillage.villages.map((vill:any)=>{
-                       totalNumberOfVillages.push(vill)
-                 })
-
-                
+               let finalResult = result.filter((fnl)=>{
+                 return fnl.isDisable == false
                })
 
-               console.log(totalNumberOfDepartmant.length, countInside)
-            
-
-               
-               
-            //    let newArray:any = [ ]
-            //    let newArrayOfDept:any = [ ]
-
-            //    let totalDept = 0
-            //    users.map((user:any,index)=>{
-            //        totalDept = totalDept + user.AssignDepartments.departments.length
-            //     if(index == users.length - 1)
-            //     {
-            //        user.AssignVillage.villages.map((ids)=>{
-            //            newArray.push(ids)
-            //         })
-
-            //         newArrayOfDept.push(user.AssignVillage.villages.length * user.AssignDepartments.departments.length)
-            //     }
-            //     })
-            //     console.log(totalDept)
-            //     let disableDepthLength = 0
-            //     users.map((user:any,index)=>{
-            //         deptListDisable.map(((disDep)=>{
-            //             if(user.AssignDepartments.departments.includes(disDep._id))
-            //             {
-            //                 disableDepthLength = disableDepthLength + 1
-            //             }
-
-            //         }))
-            //     })
-            //     console.log(disableDepthLength)
-            //    let newArrayOfResult :any = []
-
-            //    for(let singleObj of newArray){
-            //        if(newArrayOfResult.length == 0){
-            //            newArrayOfResult.push(singleObj)
-            //        }else{
-            //            if( ! newArrayOfResult.find((obj : any)=>obj == singleObj)){
-            //                newArrayOfResult.push(singleObj)
-            //            }
-            //        }
-            //    }         
-            //    console.log(totalDept,"totalDept")
-            //    console.log(result.length)
-            //    console.log(newArrayOfResult.length)
-               
-            //    console.log(deptList.length * users.length ,"deptList.length * users.length")
-               if(!isVillageAndDeptSameUser)
-               {
-                console.log(totalNumberOfVillages.length , result.length)
-                if(totalNumberOfVillages.length == result.length)
-                
-                {
+          
+              
                    
-                    if(totalNumberOfDepartmant.length/countInside == deptList.length)
+                    if(finalResult.length * deptList.length == combination.length)
                     {
                          return res.status(201).send({ message: "true" })
 
@@ -1310,10 +1245,6 @@ console.log(arrayWithRank);
                     }
                         
 
-                }
-                else{
-                    return res.status(500).send({ message: "no" })
-                }
             //    if(deptList.length * users.length == totalDept - disableDepthLength)
             //    {
 
@@ -1333,11 +1264,7 @@ console.log(arrayWithRank);
             //     return res.status(500).send({ message: "yes",deptListDisable:deptListDisable })
 
             //    }
-            }
-            else{
-                return res.status(201).send({ message: "true" })
-
-            }
+           
 
 
         } catch (error) {

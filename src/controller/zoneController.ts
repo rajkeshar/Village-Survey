@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import zoneModal from '../modal/zoneModal'
 import xlsx from 'xlsx';
 import userModal from '../modal/userModal';
+import combinationModel from '../modal/combinationOfAssignVillageAndDept';
 
 export async function add_taluka(req: Request, res: Response){
     var date:any = new Date();
@@ -266,6 +267,10 @@ export async function deleteBlockOrVillage(req: Request, res: Response) {
                 { $pull: { 'blocks.$[block].taluka.villages': { villageUniqueId: villageUniqueId } } },
                 { arrayFilters: [{ 'block.blockUniqueId': blockUniqueId }] }
             )
+
+                await combinationModel.deleteMany({ villageId:villageUniqueId });
+
+            
         }
         return res.status(201).send({ mesage: "Deleted successfully", success: true })
     } catch (error) {

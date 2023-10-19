@@ -11,7 +11,7 @@ router.get('/changeSurveyStatusToFalse/:id', changeSurveyStatusToFalse)
 
 router.get('/getallsurveylist', getAllSurvey)
 router.post('/deletesurey/:id', deleteSurvey)
-router.post('/getsurveydate', getSurveyDateRange)
+router.get('/getsurveydate', getSurveyDateRange)
 router.post('/submitsurvey/:id', submitSurvey)
 router.post('/monthlySurveyCompleted/:mon', monthlySurveyCompleted)
 router.get('/isongoingsurveytrue', isOnGoingSurveyTrue)

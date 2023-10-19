@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express'
 import mongoose from 'mongoose';
 import deptModal from '../modal/departmentModal'
 import * as xlsx from "xlsx/xlsx";
+import combinationModel from '../modal/combinationOfAssignVillageAndDept';
 
 // export async function uploadExcelData(req: any, res: any) {
 //     try {
@@ -191,7 +192,9 @@ export async function deleteDepartment(req: Request, res: Response) {
 
         if (!dept) return res.status(404).send({ message: "Id is not found, Invalid Id" });
         await deptModal.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) },
-            { $set: { 'IsActive': false } });
+            { $set: { 'IsActive': false} });
+
+        await combinationModel.deleteMany({ deptId:id });
         return res.status(200).send({ message: 'Successfully deleted', success: true });
     } catch (error) {
         console.log(error);
@@ -395,6 +398,7 @@ export async function disableDepartmentById(req: Request, res: Response) {
         if (!isExist) return res.status(400).send({ message: 'This id is not exist, Invaild Id' })
         //  const setQuery = { $addToSet: { "schemeDetails": { $each: [ schemeId , schemeName ]}}};
         let result = await deptModal.findByIdAndUpdate( new mongoose.Types.ObjectId(id), { 'isDisable': isDisable },{new : true});
+        let resultCombination = await combinationModel.updateMany({ deptId:id }, { isDisable: isDisable });
         return res.status(201).send({ message: 'Successfully updated', data: result, success: true });
     } catch (error) {
         console.log(error);
