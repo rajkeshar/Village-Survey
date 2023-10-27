@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import deptModal from '../modal/departmentModal'
 import * as xlsx from "xlsx/xlsx";
 import combinationModel from '../modal/combinationOfAssignVillageAndDept';
+import submitSurveyModal from '../modal/submitSurveyModal';
 
 // export async function uploadExcelData(req: any, res: any) {
 //     try {
@@ -400,6 +401,42 @@ export async function disableDepartmentById(req: Request, res: Response) {
         let result = await deptModal.findByIdAndUpdate( new mongoose.Types.ObjectId(id), { 'isDisable': isDisable },{new : true});
         let resultCombination = await combinationModel.updateMany({ deptId:id }, { isDisable: isDisable });
         return res.status(201).send({ message: 'Successfully updated', data: result, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })
+    }
+}
+
+
+export async function deptListAssign(req: Request, res: Response) {
+    let { email,villageId,surveyId } = req.query 
+    try {
+       const assignDept:any =  await combinationModel.find({userEmail:email,villageId})
+       const submitModelData:any = await submitSurveyModal.find({surveyId:surveyId})
+
+    //    combinationModel.
+       console.log(assignDept)
+       console.log(submitModelData)
+       function removeDuplicatesByDeptAndVillage(first, second) {
+        // Create a set of unique combinations of deptId and villageId from the second array
+        const uniqueCombinations = new Set();
+      
+        for (const item of second) {
+          uniqueCombinations.add(`${item.surveyDetail.deptId.toString()}-${item.villageUniqueId}`);
+        }
+      
+        // Filter the first array to remove items with the same combinations
+        const filteredFirst = first.filter((item) => {
+          const combination = `${item.deptId}-${item.villageId}`;
+          return !uniqueCombinations.has(combination);
+        });
+      
+        return filteredFirst;
+      }
+
+    let arr:any = removeDuplicatesByDeptAndVillage(assignDept,submitModelData)
+    return res.status(200).json({ deptList:arr, success: true,status:200 })
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error", error: JSON.stringify(error), success: false })

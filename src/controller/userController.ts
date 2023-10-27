@@ -441,6 +441,7 @@ export async function deleteUser(req: Request, res: Response) {
         .json({ message: `User is not existed. Invalid ID!` });
     const filter = { _id: new mongoose.Types.ObjectId(id) };
     await userModal.findOneAndUpdate(filter, update);
+    await combinationModel.deleteMany({ userID:id });
     res.status(201).json({ message: `User deleted successfully.` });
   } catch (error) {
     console.log(error);
@@ -1621,3 +1622,81 @@ export async function deleteCombination(req: Request, res: Response){
     return res.status(500).json({ error: 'Internal Server Error',status:500 });
   }
 };
+
+
+
+export async function excelDownloadAssignCombination (
+  req: Request,
+  res: Response
+){
+  try{
+     const combination = await combinationModel.find({})
+
+    return res.status(200).json({ combination,status:200 });
+
+  }
+  catch(err)
+  {
+    return res.status(500).json({ error: 'Internal Server Error',status:500 });
+
+  }
+}
+
+
+export async function excelDownloadOfNonAssignCombination (
+  req: Request,
+  res: Response
+){
+  try{
+     const combination = await combinationModel.find({})
+     let allVillages = await zoneModal.aggregate([
+      { $unwind: "$blocks" },
+      { $unwind: "$blocks.taluka.villages" },
+      {
+          $project: {
+              _id: 1,
+              districtName: 1,
+              villageName: "$blocks.taluka.villages.villageName",
+              villageUniqueId: "$blocks.taluka.villages.villageUniqueId"
+          }
+      }])
+       
+      let allDept = await deptModal.find({isDisable:false,IsActive:true})
+      let allCombinationArray:any = []
+        allVillages.map((allCombination:any)=>{
+
+          allDept.map((allDeptCombination:any)=>{
+                  allCombinationArray.push({
+                    deptName:allDeptCombination.deptName,
+                    deptId:allDeptCombination._id,
+                    villageId:allCombination.villageUniqueId,
+                    villageName:allCombination.villageName
+                  })
+          })
+
+        })
+        function removeCommonDataFromArray(firstArray, secondArray) {
+          // Create a Set of unique identifiers based on the combination of deptId and villageId from the first array
+          const uniqueIdentifiers = new Set(
+            firstArray.map(item => `${item.deptId}-${item.villageId}`)
+          );
+        
+          // Filter the second array to keep only items with identifiers that are not present in the first array
+          const filteredSecondArray = secondArray.filter(item => {
+            const identifier = `${item.deptId}-${item.villageId}`;
+            return !uniqueIdentifiers.has(identifier);
+          });
+        
+          return filteredSecondArray;
+        }
+        const result = removeCommonDataFromArray(combination, allCombinationArray);
+
+    return res.status(200).json({ remainingCombination:result,status:200 });
+
+  }
+  catch(err)
+  {
+    return res.status(500).json({ error: 'Internal Server Error',status:500 });
+
+  }
+}

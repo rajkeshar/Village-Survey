@@ -1,5 +1,5 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
-import { addNewDepartment,deleteScheme, deleteDepartment,getAllDepartmentAndScheme2, getAllDepartment, getAllDepartmentAndScheme, getDepartmentById, getSchemeByDepartment, updateDepartment,   uploadSchemeData, updateQuestion, getQuestionnaireByDepartment, fetchDepartmentListById, deleteQuestion, disableDepartmentById } from '../controller/deptController';
+import { addNewDepartment,deleteScheme,deptListAssign, deleteDepartment,getAllDepartmentAndScheme2, getAllDepartment, getAllDepartmentAndScheme, getDepartmentById, getSchemeByDepartment, updateDepartment,   uploadSchemeData, updateQuestion, getQuestionnaireByDepartment, fetchDepartmentListById, deleteQuestion, disableDepartmentById } from '../controller/deptController';
 import { upload } from '../middleware/auth';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
@@ -20,6 +20,8 @@ router.post('/getquestionnairbyscheme', getQuestionnaireByDepartment)
 router.post('/fetchdeptlistbyids', fetchDepartmentListById)
 router.delete('/deletequestion/:id/:schemeId/:questionId', deleteQuestion)
 router.post('/disabledepartment/:id', disableDepartmentById)
+router.get('/deptListAssign/', deptListAssign)
+
 
 
 

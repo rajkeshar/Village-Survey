@@ -1,5 +1,5 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
-import { addNewSurvey,topRankingVilagesDataForPublice,getPubliceSurveyData,publiceSurveyData,topRankingVilaagesElseQuestion,getSurveyStatus,getSurveyStatusById,checkMatrix,isOnGoingSurveyTrue,progressDetailofSurvey, changeSurveyStatusToFalse,changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey, submitSurvey, monthlySurveyCompleted, getInspectionsDetails, getScoreBiseRank, getDashBoardDetail,departmantQuestionRankData,topRankingVilaages,topRankingDepartmants, getHighScoreVillage } from '../controller/inspectionController';
+import { addNewSurvey,surveyChart,topRankingVilagesDataForPublice,getPubliceSurveyData,publiceSurveyData,topRankingVilaagesElseQuestion,getSurveyStatus,getSurveyStatusById,checkMatrix,isOnGoingSurveyTrue,progressDetailofSurvey, changeSurveyStatusToFalse,changeSurveyStatus, getSurveyDateRange,deleteSurvey, getAllSurvey,  getSurveyById, updateNewSurvey, submitSurvey, monthlySurveyCompleted, getInspectionsDetails, getScoreBiseRank, getDashBoardDetail,departmantQuestionRankData,topRankingVilaages,topRankingDepartmants, getHighScoreVillage } from '../controller/inspectionController';
 import {checkRole} from '../utils/user-auth'
 const router = express.Router();
 
@@ -32,6 +32,8 @@ router.get('/checkSurveyStatus/', getSurveyStatus)
 router.get('/checkSurveyStatus/:id', getSurveyStatusById)
 router.post('/publiceSurveyData',publiceSurveyData)
 router.get('/getPubliceSurveyData',getPubliceSurveyData)
+router.get('/surveyChart',surveyChart)
+
 
 
 

@@ -1169,6 +1169,79 @@ console.log(arrayWithRank);
 
     }
 
+    export async function surveyChart(req: Request, res: Response) {
+
+        let surveys = await surveyModal.find({})
+        function separateSurveysByMonth(surveyData:any) {
+            const surveysByMonth:any = new Array(12).fill(null).map(() => []);
+            
+            for (const survey of surveyData) {
+              const startDate = new Date(survey.surveyStartDate);
+              const surveyMonth = startDate.getMonth();
+              
+              surveysByMonth[surveyMonth].push(survey);
+            }
+            
+            return surveysByMonth;
+          }
+          function separatePendingSurveysByMonth(surveyData) {
+            const pendingSurveysByMonth:any = new Array(12).fill(null).map(() => []);
+            
+            for (const survey of surveyData) {
+              if (survey.IsOnGoingSurvey === "pending") {
+                const startDate = new Date(survey.surveyStartDate);
+                const surveyMonth = startDate.getMonth();
+                pendingSurveysByMonth[surveyMonth].push(survey);
+              }
+            }
+            
+            return pendingSurveysByMonth;
+          }
+
+          function separateCompletedSurveysByMonth(surveyData) {
+            const completedSurveysByMonth:any = new Array(12).fill(null).map(() => []);
+            
+            for (const survey of surveyData) {
+              if (survey.IsOnGoingSurvey === "completed") {
+                const startDate = new Date(survey.surveyStartDate);
+                const surveyMonth = startDate.getMonth();
+                completedSurveysByMonth[surveyMonth].push(survey);
+              }
+            }
+            
+            return completedSurveysByMonth;
+          }
+        const surveysSeparatedByMonth = separateSurveysByMonth(surveys);
+
+        const pendingSurveysSeparatedByMonth = separatePendingSurveysByMonth(surveys);
+        const completedSurveysSeparatedByMonth = separateCompletedSurveysByMonth(surveys);
+
+        let totalSurvey:any = []
+        let totalPending:any = []
+        let totalCompleted:any = []
+
+        surveysSeparatedByMonth.map((totalData:any)=>{
+            totalSurvey.push(totalData.length)
+        })
+
+        pendingSurveysSeparatedByMonth.map((pandingData:any)=>{
+            totalPending.push(pandingData.length)
+        })
+
+        completedSurveysSeparatedByMonth.map((completedData:any)=>{
+            totalCompleted.push(completedData.length)
+        })
+        res.status(200).json({
+            mssg:"success",
+            totalSurvey:totalSurvey,
+            totalPending,
+            totalCompleted
+        })
+        
+    }
+
+    
+
     export async function getPubliceSurveyData(req: Request, res: Response) {
         try {
           
@@ -1435,8 +1508,17 @@ console.log(arrayWithRank);
     export async function topRankingDepartmants(req:Request, res:Response)
     {
         try{
-            const dept = await deptModal.find({})
-            const result = await submitSurveyModal.find({})
+            const dept = await deptModal.find({IsActive:true,isDisable:false})
+            const survey = await surveyModal.find({IsOnGoingSurvey:"OnGoing"})
+
+            if(survey.length == 0)
+            {
+             return res.status(200).json({data:[],btn:1})            
+
+            }
+            const result = await submitSurveyModal.find({surveyId:survey[0]._id})
+
+           
           
             let data = result.map((village)=>{
                 
@@ -1465,8 +1547,8 @@ console.log(arrayWithRank);
                         departmants:[{
                             deptId:deptScore.surveyDetail.deptId,
                             deptName:deptScore.surveyDetail.deptName,
-                            score:finalScore
-    
+                            score:finalScore,
+                            email:deptScore.email
                         }]
                     }
                 })
