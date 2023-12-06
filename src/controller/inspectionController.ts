@@ -145,12 +145,13 @@ export async function submitSurvey(req: Request, res: Response) {
     try {
         let surveyId = req.params.id;
         let { villageId, deptDetails, surveyorLoginId, villageName } = req.body;
-        console.log(req.body)
+        console.log(req.body,"hiii")
+        console.log(req.params.id,"params")
         if (!surveyId) {
             return res.status(400).json({ message: "SurveyId is required",status:400,data:"" })
         }
         //check that survyor is authorize to submit the survey or not
-        const user:any = await userModal.findOne({ email: surveyorLoginId, isInspector: true })
+        const user:any = await userModal.findOne({ email: surveyorLoginId, isInspector: true,IsActive:true })
 
         if (!user) res.status(400).json({ message: "User not found or He is not Inspector",status:400,data:[] })  // user not found
         else {
