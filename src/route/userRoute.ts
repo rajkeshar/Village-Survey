@@ -1,6 +1,6 @@
 import express, { application, NextFunction ,Request,Response} from 'express'
 import {checkRole} from '../utils/user-auth'
-import { getUserById,deleteUser,getSelectedVillageList,listOfAssignUserDeptVillage, forgetPassword,departmentAssignmentForSurveyor, logIn,getAllUser, loginSuperAdmin, signUp, superAdminRegister, updateUser,  verifyOTP, makeInspectoreProfile, villageAssignmentForSurveyor, checkDuplicateDeparmentAssignInVillage, getUserAssignedVillageAndDepartment, pullVillageFromSurveyor, pullDepartmentsFromSurveyor, getAssignVillageName,numberOfVillageRemaingCount, getRemaingVillageNAmeByUserID} from '../controller/userController';
+import { getUserById,excelDownloadAssignCombination,excelDownloadOfNonAssignCombination,deleteCombination,deleteUser,getCombinationData,combinationAdd,isAvailableToDelete,getSelectedVillageList,listOfAssignUserDeptVillage, forgetPassword,departmentAssignmentForSurveyor, logIn,getAllUser, loginSuperAdmin, signUp, superAdminRegister, updateUser,  verifyOTP, makeInspectoreProfile, villageAssignmentForSurveyor, checkDuplicateDeparmentAssignInVillage, getUserAssignedVillageAndDepartment, pullVillageFromSurveyor, pullDepartmentsFromSurveyor, getAssignVillageName,numberOfVillageRemaingCount, getRemaingVillageNAmeByUserID} from '../controller/userController';
 import { authenticateToken } from '../middleware/auth';
 const router = express.Router();
 
@@ -34,6 +34,16 @@ router.post('/deselectvillagefromuser/:id',  pullVillageFromSurveyor)
 router.post('/deselectdeptfromuser/:id',  pullDepartmentsFromSurveyor)
 router.get('/getremainingvillagenamebyuserid/:id/:surveyId',  getRemaingVillageNAmeByUserID)
 router.get('/numberOfVillageRemaingCount/:id/:surveyId',  numberOfVillageRemaingCount)
+
+router.get('/isAvailableToDelete/',  isAvailableToDelete)
+router.post("/combinationAdd",combinationAdd)
+router.get("/getCombination/:id",getCombinationData)
+router.get("/deleteCombination/:id",deleteCombination)
+
+router.get("/excelDownloadAssignCombination/",excelDownloadAssignCombination)
+router.get("/excelDownloadOfNonAssignCombination/",excelDownloadOfNonAssignCombination)
+
+
 
 
 
